@@ -50,8 +50,6 @@ def SPV_SubgroupBallotKHROp : SPV_Op<"SubgroupBallotKHR", []> {
   }];
 
   let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
     Extension<[SPV_KHR_shader_ballot]>,
     Capability<[SPV_C_SubgroupBallotKHR]>
   ];

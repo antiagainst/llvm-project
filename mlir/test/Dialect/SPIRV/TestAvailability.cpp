@@ -41,10 +41,14 @@ void PrintOpAvailability::runOnFunction() {
     if (auto minVersion = dyn_cast<spirv::QueryMinVersionInterface>(op))
       os << opName << " min version: "
          << spirv::stringifyVersion(minVersion.getMinVersion()) << "\n";
+    else
+      os << opName << " has no min version requirement\n";
 
     if (auto maxVersion = dyn_cast<spirv::QueryMaxVersionInterface>(op))
       os << opName << " max version: "
          << spirv::stringifyVersion(maxVersion.getMaxVersion()) << "\n";
+    else
+      os << opName << " has no max version requirement\n";
 
     if (auto extension = dyn_cast<spirv::QueryExtensionInterface>(op)) {
       os << opName << " extensions: [";
@@ -56,6 +60,8 @@ void PrintOpAvailability::runOnFunction() {
         os << "]";
       }
       os << " ]\n";
+    } else {
+      os << opName << " has no extension requirement\n";
     }
 
     if (auto capability = dyn_cast<spirv::QueryCapabilityInterface>(op)) {
@@ -68,6 +74,8 @@ void PrintOpAvailability::runOnFunction() {
         os << "]";
       }
       os << " ]\n";
+    } else {
+      os << opName << " has no capability requirement\n";
     }
     os.flush();
 

@@ -3068,8 +3068,5 @@ namespace spirv {
 #define GET_OP_CLASSES
 #include "mlir/Dialect/SPIRV/SPIRVOps.cpp.inc"
 
-// TableGen'erated operation availability interface implementations.
-#include "mlir/Dialect/SPIRV/SPIRVOpAvailabilityImpl.inc"
-
 } // namespace spirv
 } // namespace mlir

@@ -204,28 +204,6 @@ class Capability<list<I32EnumAttrCase> capabilities> : Availability {
                  "}";
 }
 
-// TODO(antiagainst): the following interfaces definitions are duplicating with
-// the above. Remove them once we are able to support dialect-specific contents
-// in ODS.
-def QueryMinVersionInterface : OpInterface<"QueryMinVersionInterface"> {
-  let methods = [InterfaceMethod<"", "::mlir::spirv::Version", "getMinVersion">];
-}
-def QueryMaxVersionInterface : OpInterface<"QueryMaxVersionInterface"> {
-  let methods = [InterfaceMethod<"", "::mlir::spirv::Version", "getMaxVersion">];
-}
-def QueryExtensionInterface : OpInterface<"QueryExtensionInterface"> {
-  let methods = [InterfaceMethod<
-    "",
-    "::llvm::SmallVector<::llvm::SmallVector<::mlir::spirv::Extension, 1>, 1>",
-    "getExtensions">];
-}
-def QueryCapabilityInterface : OpInterface<"QueryCapabilityInterface"> {
-  let methods = [InterfaceMethod<
-    "",
-    "::llvm::SmallVector<::llvm::SmallVector<::mlir::spirv::Capability, 1>, 1>",
-    "getCapabilities">];
-}
-
 //===----------------------------------------------------------------------===//
 // SPIR-V extension definitions
 //===----------------------------------------------------------------------===//
@@ -3166,22 +3144,9 @@ def SPV_OpcodeAttr :
 
 // Base class for all SPIR-V ops.
 class SPV_Op<string mnemonic, list<OpTrait> traits = []> :
-    Op<SPV_Dialect, mnemonic, !listconcat(traits, [
-         // TODO(antiagainst): We don't need all of the following traits for
-         // every op; only the suitabble ones should be added automatically
-         // after ODS supports dialect-specific contents.
-         DeclareOpInterfaceMethods<QueryMinVersionInterface>,
-         DeclareOpInterfaceMethods<QueryMaxVersionInterface>,
-         DeclareOpInterfaceMethods<QueryExtensionInterface>,
-         DeclareOpInterfaceMethods<QueryCapabilityInterface>
-       ])> {
+    Op<SPV_Dialect, mnemonic, traits> {
   // Availability specification for this op itself.
-  list<Availability> availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
+  list<Availability> availability = [];
 
   // For each SPIR-V op, the following static functions need to be defined
   // in SPVOps.cpp:

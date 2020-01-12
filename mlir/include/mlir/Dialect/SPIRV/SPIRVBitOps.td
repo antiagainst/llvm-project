@@ -88,13 +88,6 @@ def SPV_BitCountOp : SPV_BitUnaryOp<"BitCount", []> {
     %3 = spv.BitCount %1: vector<4xi32>
     ```
   }];
-
-  let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
 }
 
 // -----
@@ -147,9 +140,6 @@ def SPV_BitFieldInsertOp : SPV_Op<"BitFieldInsert", [NoSideEffect]> {
   }];
 
   let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
     Capability<[SPV_C_Shader]>
   ];
 
@@ -212,9 +202,6 @@ def SPV_BitFieldSExtractOp : SPV_BitFieldExtractOp<"BitFieldSExtract", []> {
   }];
 
   let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
     Capability<[SPV_C_Shader]>
   ];
 }
@@ -248,9 +235,6 @@ def SPV_BitFieldUExtractOp : SPV_BitFieldExtractOp<"BitFieldUExtract", []> {
   }];
 
   let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
     Capability<[SPV_C_Shader]>
   ];
 }
@@ -288,9 +272,6 @@ def SPV_BitReverseOp : SPV_BitUnaryOp<"BitReverse", []> {
   }];
 
   let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
     Capability<[SPV_C_Shader]>
   ];
 }
@@ -327,13 +308,6 @@ def SPV_BitwiseAndOp : SPV_BitBinaryOp<"BitwiseAnd", [Commutative]> {
     %2 = spv.BitwiseAnd %0, %1 : vector<4xi32>
     ```
   }];
-
-  let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
 }
 
 // -----
@@ -368,13 +342,6 @@ def SPV_BitwiseOrOp : SPV_BitBinaryOp<"BitwiseOr", [Commutative]> {
     %2 = spv.BitwiseOr %0, %1 : vector<4xi32>
     ```
   }];
-
-  let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
 }
 
 // -----
@@ -409,13 +376,6 @@ def SPV_BitwiseXorOp : SPV_BitBinaryOp<"BitwiseXor", [Commutative]> {
     %2 = spv.BitwiseXor %0, %1 : vector<4xi32>
     ```
   }];
-
-  let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
 }
 
 // -----
@@ -460,13 +420,6 @@ def SPV_ShiftLeftLogicalOp : SPV_ShiftOp<"ShiftLeftLogical", []> {
     %5 = spv.ShiftLeftLogical %3, %4 : vector<3xi32>, vector<3xi16>
     ```
   }];
-
-  let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
 }
 
 // -----
@@ -508,13 +461,6 @@ def SPV_ShiftRightArithmeticOp : SPV_ShiftOp<"ShiftRightArithmetic", []> {
     %5 = spv.ShiftRightArithmetic %3, %4 : vector<3xi32>, vector<3xi16>
     ```
   }];
-
-  let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
 }
 
 // -----
@@ -557,13 +503,6 @@ def SPV_ShiftRightLogicalOp : SPV_ShiftOp<"ShiftRightLogical", []> {
     %5 = spv.ShiftRightLogical %3, %4 : vector<3xi32>, vector<3xi16>
     ```
   }];
-
-  let availability = [
-    MinVersion<SPV_V_1_0>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
-    Capability<[]>
-  ];
 }
 
 // -----

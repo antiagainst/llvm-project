@@ -158,7 +158,12 @@ def SPV_FMulOp : SPV_ArithmeticBinaryOp<"FMul", SPV_Float, [Commutative]> {
 // -----
 
 def SPV_FNegateOp : SPV_ArithmeticUnaryOp<"FNegate", SPV_Float, []> {
-  let summary = "Floating-point subtract of Operand from zero.";
+  let summary = [{
+    Inverts the sign bit of Operand. (Note, however, that OpFNegate is still
+    considered a floating-point instruction, and so is subject to the
+    general floating-point rules regarding, for example, subnormals and NaN
+    propagation).
+  }];
 
   let description = [{
     Result Type must be a scalar or vector of floating-point type.

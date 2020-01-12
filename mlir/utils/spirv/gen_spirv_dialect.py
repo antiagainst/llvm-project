@@ -250,18 +250,10 @@ def get_availability_spec(enum_case, capability_mapping, for_op, for_cap):
     min_version = ''
   elif min_version:
     min_version = 'MinVersion<SPV_V_{}>'.format(min_version.replace('.', '_'))
-  # TODO(antiagainst): delete this once ODS can support dialect-specific content
-  # and we can use omission to mean no requirements.
-  if for_op and not min_version:
-    min_version = 'MinVersion<SPV_V_1_0>'
 
   max_version = enum_case.get('lastVersion', '')
   if max_version:
     max_version = 'MaxVersion<SPV_V_{}>'.format(max_version.replace('.', '_'))
-  # TODO(antiagainst): delete this once ODS can support dialect-specific content
-  # and we can use omission to mean no requirements.
-  if for_op and not max_version:
-    max_version = 'MaxVersion<SPV_V_1_5>'
 
   exts = enum_case.get('extensions', [])
   if exts:
@@ -272,11 +264,7 @@ def get_availability_spec(enum_case, capability_mapping, for_op, for_cap):
     # under such case should be interpreted as this symbol is introduced as
     # a core symbol since the given version, rather than a minimal version
     # requirement.
-    min_version = 'MinVersion<SPV_V_1_0>' if for_op else ''
-  # TODO(antiagainst): delete this once ODS can support dialect-specific content
-  # and we can use omission to mean no requirements.
-  if for_op and not exts:
-    exts = 'Extension<[]>'
+    min_version = ''
 
   caps = enum_case.get('capabilities', [])
   implies = ''
@@ -300,10 +288,6 @@ def get_availability_spec(enum_case, capability_mapping, for_op, for_cap):
     else:
       caps = 'Capability<[{}]>'.format(', '.join(prefixed_caps))
       implies = ''
-  # TODO(antiagainst): delete this once ODS can support dialect-specific content
-  # and we can use omission to mean no requirements.
-  if for_op and not caps:
-    caps = 'Capability<[]>'
 
   avail = ''
   if min_version or max_version or caps or exts:

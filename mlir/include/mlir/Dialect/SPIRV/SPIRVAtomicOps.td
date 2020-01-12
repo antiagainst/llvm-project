@@ -121,9 +121,7 @@ def SPV_AtomicCompareExchangeWeakOp : SPV_Op<"AtomicCompareExchangeWeak", []> {
   }];
 
   let availability = [
-    MinVersion<SPV_V_1_0>,
     MaxVersion<SPV_V_1_3>,
-    Extension<[]>,
     Capability<[SPV_C_Kernel]>
   ];
 

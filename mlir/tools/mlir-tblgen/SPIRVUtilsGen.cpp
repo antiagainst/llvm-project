@@ -16,6 +16,8 @@
 #include "mlir/TableGen/Attribute.h"
 #include "mlir/TableGen/Format.h"
 #include "mlir/TableGen/GenInfo.h"
+#include "mlir/TableGen/ODSDialectHook.h"
+#include "mlir/TableGen/OpClass.h"
 #include "mlir/TableGen/Operator.h"
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/SmallVector.h"
@@ -1159,7 +1161,9 @@ static mlir::GenRegistration
 // SPIR-V Availability Impl AutoGen
 //===----------------------------------------------------------------------===//
 
-static void emitAvailabilityImpl(const Operator &srcOp, raw_ostream &os) {
+
+static void emitAvailabilityImpl(const Operator &srcOp,
+                                     mlir::tblgen::OpClass &emitClass) {
   mlir::tblgen::FmtContext fctx;
   fctx.addSubst("overall", "overall");
 
@@ -1189,21 +1193,25 @@ static void emitAvailabilityImpl(const Operator &srcOp, raw_ostream &os) {
     StringRef availClassName = availClass.getKey();
     Availability avail = availClass.getValue();
 
+    // Add the interface trait to this op.
+    emitClass.addTrait(formatv("{0}::Trait", avail.getInterfaceClassName()));
+
     // Generate the implementation method signature.
-    os << formatv("{0} {1}::{2}() {{\n", avail.getQueryFnRetType(),
-                  srcOp.getCppClassName(), avail.getQueryFnName());
+    auto &method =
+        emitClass.newMethod(avail.getQueryFnRetType(), avail.getQueryFnName());
+    auto &body = method.body();
 
     // Create the variable for the final requirement and initialize it.
-    os << formatv("  {0} overall = {1};\n", avail.getQueryFnRetType(),
-                  avail.getMergeInitializer());
+    body << formatv("  {0} overall = {1};\n", avail.getQueryFnRetType(),
+                    avail.getMergeInitializer());
 
     // Update with the op's specific availability spec.
     for (const Availability &avail : opAvailabilities)
       if (avail.getClass() == availClassName) {
-        os << "  "
-           << tgfmt(avail.getMergeActionCode(),
-                    &fctx.addSubst("instance", avail.getMergeInstance()))
-           << ";\n";
+        body << "  "
+             << tgfmt(avail.getMergeActionCode(),
+                      &fctx.addSubst("instance", avail.getMergeInstance()))
+             << ";\n";
       }
 
     // Update with enum attributes' specific availability spec.
@@ -1231,59 +1239,39 @@ static void emitAvailabilityImpl(const Operator &srcOp, raw_ostream &os) {
       if (enumAttr->isBitEnum()) {
         // For BitEnumAttr, we need to iterate over each bit to query its
         // availability spec.
-        os << formatv("  for (unsigned i = 0; "
-                      "i < std::numeric_limits<{0}>::digits; ++i) {{\n",
-                      enumAttr->getUnderlyingType());
-        os << formatv("    {0}::{1} attrVal = this->{2}() & "
-                      "static_cast<{0}::{1}>(1 << i);\n",
-                      enumAttr->getCppNamespace(), enumAttr->getEnumClassName(),
-                      namedAttr.name);
-        os << formatv("    if (static_cast<{0}>(attrVal) == 0) continue;\n",
-                      enumAttr->getUnderlyingType());
+        body << formatv("  for (unsigned i = 0; "
+                        "i < std::numeric_limits<{0}>::digits; ++i) {{\n",
+                        enumAttr->getUnderlyingType());
+        body << formatv("    {0}::{1} attrVal = this->{2}() & "
+                        "static_cast<{0}::{1}>(1 << i);\n",
+                        enumAttr->getCppNamespace(),
+                        enumAttr->getEnumClassName(), namedAttr.name);
+        body << formatv("    if (static_cast<{0}>(attrVal) == 0) continue;\n",
+                        enumAttr->getUnderlyingType());
       } else {
         // For IntEnumAttr, we just need to query the value as a whole.
-        os << "  {\n";
-        os << formatv("    auto attrVal = this->{0}();\n", namedAttr.name);
+        body << "  {\n";
+        body << formatv("    auto attrVal = this->{0}();\n", namedAttr.name);
       }
-      os << formatv("    auto instance = {0}::{1}(attrVal);\n",
-                    enumAttr->getCppNamespace(), avail.getQueryFnName());
-      os << "    if (instance) "
-         // TODO(antiagainst): use `avail.getMergeCode()` here once ODS supports
-         // dialect-specific contents so that we can use not implementing the
-         // availability interface as indication of no requirements.
-         << tgfmt(caseSpecs.front().second.getMergeActionCode(),
-                  &fctx.addSubst("instance", "*instance"))
-         << ";\n";
-      os << "  }\n";
+      body << formatv("    auto instance = {0}::{1}(attrVal);\n",
+                      enumAttr->getCppNamespace(), avail.getQueryFnName());
+      body << "    if (instance) "
+           << tgfmt(avail.getMergeActionCode(),
+                    &fctx.addSubst("instance", "*instance"))
+           << ";\n";
+      body << "  }\n";
     }
 
-    os << "  return overall;\n";
-    os << "}\n";
+    body << "  return overall;\n";
   }
 }
 
-static bool emitAvailabilityImpl(const RecordKeeper &recordKeeper,
-                                 raw_ostream &os) {
-  llvm::emitSourceFileHeader("SPIR-V Op Availability Implementations", os);
-
-  auto defs = recordKeeper.getAllDerivedDefinitions("SPV_Op");
-  for (const auto *def : defs) {
-    Operator op(def);
-    emitAvailabilityImpl(op, os);
-  }
-  return false;
-}
-
 //===----------------------------------------------------------------------===//
-// Op Availability Implementation Hook Registration
+// ODS Dialect Hook Registration
 //===----------------------------------------------------------------------===//
 
-static mlir::GenRegistration
-    genOpAvailabilityImpl("gen-spirv-avail-impls",
-                          "Generate SPIR-V operation utility definitions",
-                          [](const RecordKeeper &records, raw_ostream &os) {
-                            return emitAvailabilityImpl(records, os);
-                          });
+static mlir::tblgen::ODSDialectHookRegistration
+    emitSPIRVAvailability("spv", emitAvailabilityImpl);
 
 //===----------------------------------------------------------------------===//
 // SPIR-V Capability Implication AutoGen

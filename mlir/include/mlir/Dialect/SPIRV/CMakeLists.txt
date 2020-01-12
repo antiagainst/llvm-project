@@ -14,7 +14,6 @@ add_public_tablegen_target(MLIRSPIRVEnumAvailabilityIncGen)
 set(LLVM_TARGET_DEFINITIONS SPIRVOps.td)
 mlir_tablegen(SPIRVAvailability.h.inc -gen-avail-interface-decls)
 mlir_tablegen(SPIRVAvailability.cpp.inc -gen-avail-interface-defs)
-mlir_tablegen(SPIRVOpAvailabilityImpl.inc -gen-spirv-avail-impls)
 add_public_tablegen_target(MLIRSPIRVAvailabilityIncGen)
 
 set(LLVM_TARGET_DEFINITIONS SPIRVOps.td)

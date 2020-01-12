@@ -17,6 +17,8 @@
 
 include "mlir/Dialect/SPIRV/SPIRVBase.td"
 
+// -----
+
 def SPV_AddressOfOp : SPV_Op<"_address_of", [InFunctionScope, NoSideEffect]> {
   let summary = "Get the address of a global variable.";
 
@@ -58,6 +60,8 @@ def SPV_AddressOfOp : SPV_Op<"_address_of", [InFunctionScope, NoSideEffect]> {
   let builders = [OpBuilder<[{Builder *builder, OperationState &state,
                               spirv::GlobalVariableOp var}]>];
 }
+
+// -----
 
 def SPV_ConstantOp : SPV_Op<"constant", [NoSideEffect]> {
   let summary = "The op that declares a SPIR-V normal constant";
@@ -123,6 +127,8 @@ def SPV_ConstantOp : SPV_Op<"constant", [NoSideEffect]> {
   let autogenSerialization = 0;
 }
 
+// -----
+
 def SPV_EntryPointOp : SPV_Op<"EntryPoint", [InModuleScope]> {
   let summary = [{
     Declare an entry point, its execution model, and its interface.
@@ -184,6 +190,7 @@ def SPV_EntryPointOp : SPV_Op<"EntryPoint", [InModuleScope]> {
                               ArrayRef<Attribute> interfaceVars}]>];
 }
 
+// -----
 
 def SPV_GlobalVariableOp : SPV_Op<"globalVariable", [InModuleScope, Symbol]> {
   let summary = [{
@@ -261,6 +268,8 @@ def SPV_GlobalVariableOp : SPV_Op<"globalVariable", [InModuleScope, Symbol]> {
     }
   }];
 }
+
+// -----
 
 def SPV_ModuleOp : SPV_Op<"module",
                           [IsolatedFromAbove,
@@ -349,6 +358,8 @@ def SPV_ModuleOp : SPV_Op<"module",
   }];
 }
 
+// -----
+
 def SPV_ModuleEndOp : SPV_Op<"_module_end", [InModuleScope, Terminator]> {
   let summary = "The pseudo op that ends a SPIR-V module";
 
@@ -372,6 +383,8 @@ def SPV_ModuleEndOp : SPV_Op<"_module_end", [InModuleScope, Terminator]> {
 
   let autogenSerialization = 0;
 }
+
+// -----
 
 def SPV_ReferenceOfOp : SPV_Op<"_reference_of", [NoSideEffect]> {
   let summary = "Reference a specialization constant.";
@@ -410,6 +423,8 @@ def SPV_ReferenceOfOp : SPV_Op<"_reference_of", [NoSideEffect]> {
 
   let autogenSerialization = 0;
 }
+
+// -----
 
 def SPV_SpecConstantOp : SPV_Op<"specConstant", [InModuleScope, Symbol]> {
   let summary = "The op that declares a SPIR-V specialization constant";

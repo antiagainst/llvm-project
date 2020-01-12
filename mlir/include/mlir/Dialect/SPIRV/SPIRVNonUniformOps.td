@@ -55,8 +55,6 @@ def SPV_GroupNonUniformBallotOp : SPV_Op<"GroupNonUniformBallot", []> {
 
   let availability = [
     MinVersion<SPV_V_1_3>,
-    MaxVersion<SPV_V_1_5>,
-    Extension<[]>,
     Capability<[SPV_C_GroupNonUniformBallot]>
   ];
 
