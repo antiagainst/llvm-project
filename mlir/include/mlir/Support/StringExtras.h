@@ -21,54 +21,14 @@ namespace mlir {
 /// Converts a string to snake-case from camel-case by replacing all uppercase
 /// letters with '_' followed by the letter in lowercase, except if the
 /// uppercase letter is the first character of the string.
-inline std::string convertToSnakeCase(llvm::StringRef input) {
-  std::string snakeCase;
-  snakeCase.reserve(input.size());
-  for (auto c : input) {
-    if (std::isupper(c)) {
-      if (!snakeCase.empty() && snakeCase.back() != '_') {
-        snakeCase.push_back('_');
-      }
-      snakeCase.push_back(llvm::toLower(c));
-    } else {
-      snakeCase.push_back(c);
-    }
-  }
-  return snakeCase;
-}
+std::string convertToSnakeCase(llvm::StringRef input);
 
 /// Converts a string from camel-case to snake_case by replacing all occurrences
 /// of '_' followed by a lowercase letter with the letter in
 /// uppercase. Optionally allow capitalization of the first letter (if it is a
 /// lowercase letter)
-inline std::string convertToCamelCase(llvm::StringRef input,
-                                      bool capitalizeFirst = false) {
-  if (input.empty()) {
-    return "";
-  }
-  std::string output;
-  output.reserve(input.size());
-  size_t pos = 0;
-  if (capitalizeFirst && std::islower(input[pos])) {
-    output.push_back(llvm::toUpper(input[pos]));
-    pos++;
-  }
-  while (pos < input.size()) {
-    auto cur = input[pos];
-    if (cur == '_') {
-      if (pos && (pos + 1 < input.size())) {
-        if (std::islower(input[pos + 1])) {
-          output.push_back(llvm::toUpper(input[pos + 1]));
-          pos += 2;
-          continue;
-        }
-      }
-    }
-    output.push_back(cur);
-    pos++;
-  }
-  return output;
-}
+std::string convertToCamelCase(llvm::StringRef input,
+                               bool capitalizeFirst = false);
 } // namespace mlir
 
 #endif // MLIR_SUPPORT_STRINGEXTRAS_H

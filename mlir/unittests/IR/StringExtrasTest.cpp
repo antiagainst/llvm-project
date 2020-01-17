@@ -7,12 +7,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Support/StringExtras.h"
+#include "mlir/Support/LLVM.h"
 #include "gtest/gtest.h"
 
 using namespace mlir;
 
-static void testConvertToSnakeCase(llvm::StringRef input,
-                                   llvm::StringRef expected) {
+static void testConvertToSnakeCase(StringRef input, StringRef expected) {
   EXPECT_EQ(convertToSnakeCase(input), expected.str());
 }
 
@@ -32,8 +32,7 @@ TEST(StringExtras, ConvertToSnakeCase) {
 }
 
 template <bool capitalizeFirst>
-static void testConvertToCamelCase(llvm::StringRef input,
-                                   llvm::StringRef expected) {
+static void testConvertToCamelCase(StringRef input, StringRef expected) {
   EXPECT_EQ(convertToCamelCase(input, capitalizeFirst), expected.str());
 }
 

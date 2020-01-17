@@ -5,5 +5,4 @@ add_mlir_unittest(MLIRIRTests
   StringExtrasTest.cpp
 )
 target_link_libraries(MLIRIRTests
-  PRIVATE
-  MLIRIR)
+  PRIVATE MLIRIR MLIRSupport)

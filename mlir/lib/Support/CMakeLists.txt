@@ -3,6 +3,7 @@ set(LLVM_OPTIONAL_SOURCES
   JitRunner.cpp
   MlirOptMain.cpp
   StorageUniquer.cpp
+  StringExtras.cpp
   ToolUtilities.cpp
   TranslateClParser.cpp
 )
@@ -10,6 +11,7 @@ set(LLVM_OPTIONAL_SOURCES
 add_llvm_library(MLIRSupport
   FileUtilities.cpp
   StorageUniquer.cpp
+  StringExtras.cpp
   ToolUtilities.cpp
 
   ADDITIONAL_HEADER_DIRS

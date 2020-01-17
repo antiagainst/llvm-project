@@ -16,4 +16,5 @@ add_tablegen(mlir-tblgen MLIR
   SPIRVUtilsGen.cpp
   StructsGen.cpp
   )
+target_link_libraries(mlir-tblgen PRIVATE MLIRSupport)
 set_target_properties(mlir-tblgen PROPERTIES FOLDER "Tablegenning")
