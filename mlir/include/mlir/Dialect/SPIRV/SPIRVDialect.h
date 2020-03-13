@@ -30,12 +30,6 @@ public:
   // Type
   //===--------------------------------------------------------------------===//
 
-  /// Checks if the given `type` is valid in SPIR-V dialect.
-  static bool isValidType(Type type);
-
-  /// Checks if the given `scalar type` is valid in SPIR-V dialect.
-  static bool isValidScalarType(Type type);
-
   /// Parses a type registered to this dialect.
   Type parseType(DialectAsmParser &parser) const override;
 
