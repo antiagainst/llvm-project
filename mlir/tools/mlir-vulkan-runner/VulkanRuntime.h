@@ -19,6 +19,10 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+#ifdef MLIR_ENABLE_RENDERDOC
+#include "RenderDocAPIClient.h"
+#endif
+
 using namespace mlir;
 
 using DescriptorSetIndex = uint32_t;
@@ -221,5 +225,13 @@ private:
 
   ResourceData resourceData;
   ResourceStorageClassBindingMap resourceStorageClassData;
+
+  //===--------------------------------------------------------------------===//
+  // Capturing and analzying.
+  //===--------------------------------------------------------------------===//
+
+#ifdef MLIR_ENABLE_RENDERDOC
+  RenderDocAPIClient renderDoc;
+#endif
 };
 #endif

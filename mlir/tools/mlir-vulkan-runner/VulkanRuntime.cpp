@@ -119,6 +119,10 @@ LogicalResult VulkanRuntime::initRuntime() {
 }
 
 LogicalResult VulkanRuntime::destroy() {
+#ifdef MLIR_ENABLE_RENDERDOC
+  renderDoc.endCapture();
+#endif
+
   // According to Vulkan spec:
   // "To ensure that no work is active on the device, vkDeviceWaitIdle can be
   // used to gate the destruction of the device. Prior to destroying a device,
@@ -217,6 +221,13 @@ LogicalResult VulkanRuntime::run() {
 }
 
 LogicalResult VulkanRuntime::createInstance() {
+#ifdef MLIR_ENABLE_RENDERDOC
+  if (failed(renderDoc.connect()))
+    return failure();
+  std::cout << "Connected to RenderDoc API and writing captures to "
+            << renderDoc.getCapturePath() << "\n";
+#endif
+
   VkApplicationInfo applicationInfo = {};
   applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   applicationInfo.pNext = nullptr;
@@ -286,6 +297,10 @@ LogicalResult VulkanRuntime::createDevice() {
   RETURN_ON_VULKAN_ERROR(
       vkCreateDevice(physicalDevice, &deviceCreateInfo, 0, &device),
       "vkCreateDevice");
+
+#ifdef MLIR_ENABLE_RENDERDOC
+  renderDoc.startCapture();
+#endif
 
   VkPhysicalDeviceMemoryProperties properties = {};
   vkGetPhysicalDeviceMemoryProperties(physicalDevice, &properties);

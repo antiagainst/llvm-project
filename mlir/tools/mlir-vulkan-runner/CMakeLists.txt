@@ -1,5 +1,7 @@
 set(LLVM_OPTIONAL_SOURCES
   mlir-vulkan-runner.cpp
+  RenderDocAPIClient.cpp
+  RenderDocAPIClient.h
   vulkan-runtime-wrappers.cpp
   VulkanRuntime.cpp
   VulkanRuntime.h
@@ -51,6 +53,38 @@ if (MLIR_VULKAN_RUNNER_ENABLED)
     PUBLIC
     ${Vulkan_LIBRARY}
   )
+
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    # Try to find both the RenderDoc API header file and the shared library.
+    find_path(RenderDoc_INCLUDE_DIR
+      NAMES renderdoc.h
+      DOC "RenderDoc API include path")
+    find_library(RenderDoc_LIBRARY
+      NAMES renderdoc
+      DOC "RenderDoc dynamic library")
+
+    # If successful, then we can enable RenderDoc's capaturing capability for
+    # inspecting Vulkan dispatches.
+    if (RenderDoc_INCLUDE_DIR AND RenderDoc_LIBRARY)
+      add_llvm_library(mlir-renderdoc-api-client
+        RenderDocAPIClient.cpp
+      )
+      target_include_directories(mlir-renderdoc-api-client
+        PUBLIC ${RenderDoc_INCLUDE_DIR}
+      )
+      target_link_libraries(mlir-renderdoc-api-client
+        PUBLIC dl
+      )
+
+      # Enable RenderDoc logic in Vulkan runtime.
+      target_compile_options(vulkan-runtime-wrappers
+        PRIVATE -DMLIR_ENABLE_RENDERDOC
+      )
+      target_link_libraries(vulkan-runtime-wrappers
+        PRIVATE mlir-renderdoc-api-client
+      )
+    endif(RenderDoc_INCLUDE_DIR AND RenderDoc_LIBRARY)
+  endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
   get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
   get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
