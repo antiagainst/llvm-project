@@ -1,4 +1,5 @@
 add_mlir_dialect_library(MLIRSPIRVTransforms
+  CanonicalizeSPIRVPass.cpp
   DecorateSPIRVCompositeTypeLayoutPass.cpp
   LowerABIAttributesPass.cpp
   UpdateVCEPass.cpp

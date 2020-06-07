@@ -19,6 +19,9 @@ namespace mlir {
 namespace spirv {
 
 class ModuleOp;
+
+std::unique_ptr<OperationPass<spirv::ModuleOp>> createCanonicalizeSPIRVPass();
+
 /// Creates a module pass that converts composite types used by objects in the
 /// StorageBuffer, PhysicalStorageBuffer, Uniform, and PushConstant storage
 /// classes with layout information.

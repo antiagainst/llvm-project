@@ -11,6 +11,11 @@
 
 include "mlir/Pass/PassBase.td"
 
+def SPIRVCanonicalize : Pass<"spirv-canonicalize", "spirv::ModuleOp"> {
+  let summary = "Recursively canonicalize a spv.module op";
+  let constructor = "mlir::spirv::createCanonicalizeSPIRVPass()";
+}
+
 def SPIRVCompositeTypeLayout
     : Pass<"decorate-spirv-composite-type-layout", "ModuleOp"> {
   let summary = "Decorate SPIR-V composite type with layout info";
