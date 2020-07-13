@@ -14,11 +14,13 @@
 #include "mlir/Dialect/SPIRV/SPIRVDialect.h"
 #include "mlir/Dialect/SPIRV/SPIRVLowering.h"
 #include "mlir/Dialect/SPIRV/SPIRVOps.h"
+#include "mlir/Dialect/SPIRV/SPIRVTypes.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/AffineMap.h"
 #include "mlir/Support/LogicalResult.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/Support/Debug.h"
+#include <utility>
 
 #define DEBUG_TYPE "std-to-spirv-pattern"
 
@@ -195,23 +197,28 @@ static bool isAllocationSupported(MemRefType t) {
          t.getElementType().isIntOrFloat();
 }
 
-/// Returns the scope to use for atomic operations use for emulating store
-/// operations of unsupported integer bitwidths, based on the memref
-/// type. Returns None on failure.
-static Optional<spirv::Scope> getAtomicOpScope(MemRefType t) {
+/// Returns the memory scope and semantics to use for atomic operations use for
+/// emulating store operations of unsupported integer bitwidths, based on the
+/// memref type. Returns None on failure.
+static Optional<std::pair<spirv::Scope, spirv::MemorySemantics>>
+getAtomicOpMemoryScopeAndSemantics(MemRefType type) {
   Optional<spirv::StorageClass> storageClass =
-      SPIRVTypeConverter::getStorageClassForMemorySpace(t.getMemorySpace());
+      SPIRVTypeConverter::getStorageClassForMemorySpace(type.getMemorySpace());
   if (!storageClass)
-    return {};
+    return llvm::None;
   switch (*storageClass) {
   case spirv::StorageClass::StorageBuffer:
-    return spirv::Scope::Device;
+    return std::make_pair(spirv::Scope::Device,
+                          spirv::MemorySemantics::AcquireRelease |
+                              spirv::MemorySemantics::UniformMemory);
   case spirv::StorageClass::Workgroup:
-    return spirv::Scope::Workgroup;
-  default: {
+    return std::make_pair(spirv::Scope::Workgroup,
+                          spirv::MemorySemantics::AcquireRelease |
+                              spirv::MemorySemantics::WorkgroupMemory);
+  default:
+    break;
   }
-  }
-  return {};
+  return llvm::None;
 }
 
 //===----------------------------------------------------------------------===//
@@ -938,15 +945,15 @@ IntStoreOpPattern::matchAndRewrite(StoreOp storeOp, ArrayRef<Value> operands,
       shiftValue(loc, storeOperands.value(), offset, mask, dstBits, rewriter);
   Value adjustedPtr = adjustAccessChainForBitwidth(typeConverter, accessChainOp,
                                                    srcBits, dstBits, rewriter);
-  Optional<spirv::Scope> scope = getAtomicOpScope(memrefType);
-  if (!scope)
+  auto scopeAndSemantics = getAtomicOpMemoryScopeAndSemantics(memrefType);
+  if (!scopeAndSemantics)
     return failure();
   Value result = rewriter.create<spirv::AtomicAndOp>(
-      loc, dstType, adjustedPtr, *scope, spirv::MemorySemantics::AcquireRelease,
-      clearBitsMask);
+      loc, dstType, adjustedPtr, scopeAndSemantics->first,
+      scopeAndSemantics->second, clearBitsMask);
   result = rewriter.create<spirv::AtomicOrOp>(
-      loc, dstType, adjustedPtr, *scope, spirv::MemorySemantics::AcquireRelease,
-      storeVal);
+      loc, dstType, adjustedPtr, scopeAndSemantics->first,
+      scopeAndSemantics->second, storeVal);
 
   // The AtomicOrOp has no side effect. Since it is already inserted, we can
   // just remove the original StoreOp. Note that rewriter.replaceOp()
