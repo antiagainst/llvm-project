@@ -624,6 +624,13 @@ private:
   LinalgLoweringType loweringType;
 };
 
+/// Linalg generalization patterns
+
+/// Patterns to convert linalg.conv ops to linalg.generic ops.
+void populateLinalgConvGeneralizationPatterns(
+    MLIRContext *context, OwningRewritePatternList &patterns,
+    LinalgMarker maker = LinalgMarker());
+
 //===----------------------------------------------------------------------===//
 // Op-specific patterns.
 //===----------------------------------------------------------------------===//
