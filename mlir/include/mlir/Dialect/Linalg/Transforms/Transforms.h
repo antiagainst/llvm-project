@@ -1174,6 +1174,12 @@ protected:
                                const SmallVector<Value> &dynSizes) const;
 };
 
+/// Populates `patterns` with patterns that split linalg.pad_tensor ops by
+/// creating scf.if ops to wrap linalg.pad_tensor ops and handle
+/// padding-unncessary and padding-needed cases separately.
+void populateSplitPaddingPatterns(RewritePatternSet &patterns,
+                                  PatternBenefit baseBenefit = 1);
+
 /// Populates `patterns` with patterns that vectorize linalg.pad_tensor.
 /// These patterns are meant to apply in a complementary fashion. Benefits
 /// are used to encode a certain ordering of pattern application. To avoid

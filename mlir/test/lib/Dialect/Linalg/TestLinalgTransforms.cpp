@@ -128,6 +128,11 @@ struct TestLinalgTransforms
       llvm::cl::desc("Specify the type of loops to generate: for, parallel or "
                      "tiled_loop"),
       llvm::cl::init("for")};
+  Option<bool> testSplitPaddingPattern{
+      *this, "test-split-padding-patterns",
+      llvm::cl::desc("Test a set of patterns to split linalg.pad_tensor ops "
+                     "and handle its cases separately"),
+      llvm::cl::init(false)};
 };
 } // namespace
 
@@ -560,6 +565,12 @@ static void applyPadTensorToGenericPatterns(FuncOp funcOp) {
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
+static void applySplitPaddingPatterns(FuncOp funcOp) {
+  RewritePatternSet patterns(funcOp.getContext());
+  populateSplitPaddingPatterns(patterns);
+  (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
+}
+
 static void applyGeneralizePadTensorPatterns(FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   patterns.add<GeneralizePadTensorOpPattern>(funcOp.getContext());
@@ -719,6 +730,8 @@ void TestLinalgTransforms::runOnFunction() {
   if (testTileScalarizeDynamicDims)
     return applyTilePattern(getFunction(), loopType, tileSizes,
                             /*peeledLoops=*/{}, /*scalarizeDynamicDims=*/true);
+  if (testSplitPaddingPattern)
+    return applySplitPaddingPatterns(getFunction());
 }
 
 namespace mlir {

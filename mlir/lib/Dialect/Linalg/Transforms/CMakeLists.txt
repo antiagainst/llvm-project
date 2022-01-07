@@ -19,6 +19,7 @@ add_mlir_dialect_library(MLIRLinalgTransforms
   NamedOpConversions.cpp
   PadOpInterchange.cpp
   Promotion.cpp
+  SplitPadding.cpp
   Tiling.cpp
   Transforms.cpp
   Vectorization.cpp
