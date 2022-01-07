@@ -133,6 +133,11 @@ struct TestLinalgTransforms
       llvm::cl::desc("Test a set of patterns to split linalg.pad_tensor ops "
                      "and handle its cases separately"),
       llvm::cl::init(false)};
+  Option<bool> testConcretizePadTensorResultShape{
+      *this, "test-concretize-padtensor-result-shape",
+      llvm::cl::desc("Test patterns to make PadTensorOp result shape static "
+                     "when possible"),
+      llvm::cl::init(false)};
 };
 } // namespace
 
@@ -571,6 +576,12 @@ static void applySplitPaddingPatterns(FuncOp funcOp) {
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
+static void applyConcretizePadTensorResultShapePatterns(FuncOp funcOp) {
+  RewritePatternSet patterns(funcOp.getContext());
+  populateConcretizePadTensorResultShapePatterns(patterns);
+  (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
+}
+
 static void applyGeneralizePadTensorPatterns(FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   patterns.add<GeneralizePadTensorOpPattern>(funcOp.getContext());
@@ -732,6 +743,8 @@ void TestLinalgTransforms::runOnFunction() {
                             /*peeledLoops=*/{}, /*scalarizeDynamicDims=*/true);
   if (testSplitPaddingPattern)
     return applySplitPaddingPatterns(getFunction());
+  if (testConcretizePadTensorResultShape)
+    return applyConcretizePadTensorResultShapePatterns(getFunction());
 }
 
 namespace mlir {
