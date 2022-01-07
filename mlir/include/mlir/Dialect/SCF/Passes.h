@@ -55,6 +55,10 @@ std::unique_ptr<Pass> createForLoopRangeFoldingPass();
 // Creates a pass which lowers for loops into while loops.
 std::unique_ptr<Pass> createForToWhileLoopPass();
 
+/// Creates a pass to pull ops before and after an scf.if op into both scf.if op
+/// regions.
+std::unique_ptr<Pass> createIfRegionExpansionPass();
+
 //===----------------------------------------------------------------------===//
 // Registration
 //===----------------------------------------------------------------------===//

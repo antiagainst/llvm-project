@@ -2,6 +2,7 @@ add_mlir_dialect_library(MLIRSCFTransforms
   AffineCanonicalizationUtils.cpp
   Bufferize.cpp
   ForToWhile.cpp
+  IfRegionExpansion.cpp
   LoopCanonicalization.cpp
   LoopPipelining.cpp
   LoopRangeFolding.cpp

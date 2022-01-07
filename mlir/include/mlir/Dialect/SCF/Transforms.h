@@ -158,6 +158,39 @@ void populateSCFLoopPipeliningPatterns(RewritePatternSet &patterns,
 /// loop bounds and loop steps are canonicalized.
 void populateSCFForLoopCanonicalizationPatterns(RewritePatternSet &patterns);
 
+/// Expands an scf.if op's regions by pulling ops before and after scf.if op
+/// into both regions of the scf.if op.
+//
+/// For example, it converts the following IR:
+/// ```
+/// %0 = opA ..
+/// %1 = opB ..
+/// %2 = scf.if .. {
+///   %3 = opC %0 ..
+///   scf.yield %3
+/// } else {
+///   %4 = opD ..
+///   scf.yield %4
+/// }
+/// %5 = opE %2 ..
+/// ```
+/// Into:
+/// ```
+/// %2 = scf.if .. {
+///   %0 = opA ..
+///   %1 = opB ..
+///   %3 = opC %0 ..
+///   %5 = opE %3 ..
+///   scf.yield %5
+/// } else {
+///   %0 = opA ..
+///   %1 = opB ..
+///   %4 = opD ..
+///   %5 = opE %4 ..
+///   scf.yield %5
+/// }
+/// ```
+void populateIfRegionExpansionPatterns(RewritePatternSet &patterns);
 } // namespace scf
 } // namespace mlir
 
