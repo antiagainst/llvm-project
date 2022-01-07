@@ -138,6 +138,11 @@ struct TestLinalgTransforms
       llvm::cl::desc("Test patterns to make PadTensorOp result shape static "
                      "when possible"),
       llvm::cl::init(false)};
+  Option<bool> testVectorizePadTensorWithControlFlow{
+      *this, "test-vectorize-padtensor-with-cf",
+      llvm::cl::desc(
+          "Test patterns to vectorize PadTensorOp with control flows"),
+      llvm::cl::init(false)};
 };
 } // namespace
 
@@ -582,6 +587,12 @@ static void applyConcretizePadTensorResultShapePatterns(FuncOp funcOp) {
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
+static void applyVectorizePadTensorWithControlFlowPatterns(FuncOp funcOp) {
+  RewritePatternSet patterns(funcOp.getContext());
+  populateVectorizePadTensorOpWithControlFlowPatterns(patterns);
+  (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
+}
+
 static void applyGeneralizePadTensorPatterns(FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   patterns.add<GeneralizePadTensorOpPattern>(funcOp.getContext());
@@ -745,6 +756,8 @@ void TestLinalgTransforms::runOnFunction() {
     return applySplitPaddingPatterns(getFunction());
   if (testConcretizePadTensorResultShape)
     return applyConcretizePadTensorResultShapePatterns(getFunction());
+  if (testVectorizePadTensorWithControlFlow)
+    return applyVectorizePadTensorWithControlFlowPatterns(getFunction());
 }
 
 namespace mlir {

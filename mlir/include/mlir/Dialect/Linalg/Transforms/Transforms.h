@@ -1189,6 +1189,17 @@ void populateSplitPaddingPatterns(RewritePatternSet &patterns,
 void populatePadTensorOpVectorizationPatterns(RewritePatternSet &patterns,
                                               PatternBenefit baseBenefit = 1);
 
+/// Populates `pattersn` with patterns that vectorize linalg.pad_tensor with
+/// static result shape by generating control flows to guard against vector
+/// transfer read ops to make sure they are in bounds.
+///
+/// Such conversions are needed for correctness when the linalg.pad_tensor op
+/// has dynamic low padding values and also beneficial for eventually lowering
+/// to hardware targets without native support for vector transfer read ops with
+/// out of bound semantics.
+void populateVectorizePadTensorOpWithControlFlowPatterns(
+    RewritePatternSet &patterns, PatternBenefit baseBenefit = 1);
+
 /// Match and rewrite for the pattern:
 /// ```
 ///    %alloc = ...
