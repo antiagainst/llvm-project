@@ -307,6 +307,31 @@ def Linalg_PadTensorOp : Linalg_Op<"pad_tensor",
         return getConstantIntValue(ofr) == static_cast<int64_t>(0);
       });
     }
+
+    /// Bubbles up a slice of this pad by taking the slice first and then
+    /// performing the padding. `offsets` and `strides` specifies each dimension's
+    /// start offset and size for the slice. The slice has unit strides along all
+    /// dimensions.
+    ///
+    /// Specifically, this function converts:
+    /// ```
+    /// %0 = linalg.pad_tensor %source low[...] high[...] { linalg.yield %cst }
+    /// %1 = <extract-slice> %0 offsets=[...], sizes[...]
+    /// ```
+    /// into
+    /// ```
+    /// %0 = tensor.extract_slice %source ...
+    /// %0 = linalg.pad_tensor %0 low[...] high[...] { linalg.yield %cst }
+    /// ```
+    ///
+    /// If `generateZeroSliceGuard` is true, the generated IR will contain logic
+    /// to guard against the case that we might take a zero-sized slice from the
+    /// original source. For such cases, we `tensor.generate` to generate the
+    /// full tensor.
+    Operation *bubbleUpSlice(OpBuilder &,
+                             ArrayRef<OpFoldResult> offsets,
+                             ArrayRef<OpFoldResult> sizes,
+                             bool generateZeroSliceGuard = true);
   }];
 
   let builders = [

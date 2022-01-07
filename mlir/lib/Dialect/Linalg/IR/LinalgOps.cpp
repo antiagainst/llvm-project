@@ -1302,12 +1302,22 @@ SmallVector<Range> PadTensorOp::getIterationDomain(OpBuilder &b) {
 }
 
 SmallVector<Operation *> PadTensorOp::getTiledImplementation(
-    OpBuilder &b, ValueRange dest, ArrayRef<OpFoldResult> offsets,
+    OpBuilder &b, ValueRange /*dest*/, ArrayRef<OpFoldResult> offsets,
     ArrayRef<OpFoldResult> sizes, bool /*tileDestOperands*/) {
+  Operation *result = bubbleUpSlice(b, offsets, sizes);
+  if (!result)
+    return {};
+  return {result};
+}
+
+Operation *PadTensorOp::bubbleUpSlice(OpBuilder &b,
+                                      ArrayRef<OpFoldResult> offsets,
+                                      ArrayRef<OpFoldResult> sizes,
+                                      bool generateZeroSliceGuard) {
   // Only constant padding value supported.
   Value padValue = getConstantPaddingValue();
   if (!padValue)
-    return {};
+    return nullptr;
 
   // Helper variables and functions for various arithmetic operations. These are
   // used extensively for computing new offset/length and padding values.
@@ -1449,8 +1459,7 @@ SmallVector<Operation *> PadTensorOp::getTiledImplementation(
 
   // Insert cast to ensure that types match. (May be folded away.)
   auto castResult = [&](Value val) -> Operation * {
-    auto castOp = b.create<tensor::CastOp>(loc, resultType, val);
-    return castOp;
+    return b.create<tensor::CastOp>(loc, resultType, val);
   };
 
   // In cases where the original data source is unused: Emit a GenerateOp and
@@ -1468,8 +1477,8 @@ SmallVector<Operation *> PadTensorOp::getTiledImplementation(
 
   // Emit a SliceOp and a PadTensorOp. Should not be used in cases where
   // the result shape of the new SliceOp has a zero dimension.
-  auto createPadTensorOfSubTensor = [&]() {
-    // Create pad_tensor(subtensor(x)).
+  auto createPadTensorOfExtractSlice = [&]() {
+    // Create pad_tensor(extract_slice(x)).
     auto newSliceOp = b.create<tensor::ExtractSliceOp>(
         loc, source(), newOffsets, newLengths, newStrides);
     auto newPadTensorOp = b.create<PadTensorOp>(
@@ -1483,15 +1492,14 @@ SmallVector<Operation *> PadTensorOp::getTiledImplementation(
     return castResult(newPadTensorOp);
   };
 
-  // Rewrite subtensor(pad_tensor(x)) into a GenerateOp it is statically known
-  // that the original data source x is not used.
-  if (hasZeroLen) {
-    return {createGenerateOp()};
-  }
+  // Rewrite extract_slice(pad_tensor(x)) into a GenerateOp it is statically
+  // known that the original data source x is not used.
+  if (hasZeroLen)
+    return createGenerateOp();
 
   // If there are dynamic dimensions: Generate an scf.if check to avoid creating
   // SliceOps with result dimensions of size 0 at runtime.
-  if (dynHasZeroLenCond) {
+  if (generateZeroSliceGuard && dynHasZeroLenCond) {
     auto result = b.create<scf::IfOp>(
         loc, resultType, dynHasZeroLenCond,
         /*thenBuilder=*/
@@ -1501,11 +1509,11 @@ SmallVector<Operation *> PadTensorOp::getTiledImplementation(
         /*elseBuilder=*/
         [&](OpBuilder &b, Location loc) {
           b.create<scf::YieldOp>(loc,
-                                 createPadTensorOfSubTensor()->getResult(0));
+                                 createPadTensorOfExtractSlice()->getResult(0));
         });
-    return {result};
+    return result;
   }
-  return {createPadTensorOfSubTensor()};
+  return createPadTensorOfExtractSlice();
 }
 
 namespace {
