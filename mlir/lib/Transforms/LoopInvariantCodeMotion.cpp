@@ -34,13 +34,8 @@ struct LoopInvariantCodeMotion
 };
 } // namespace
 
-// Checks whether the given op can be hoisted by checking that
-// - the op and any of its contained operations do not depend on SSA values
-//   defined inside of the loop (by means of calling definedOutside).
-// - the op has no side-effects. If sideEffecting is Never, sideeffects of this
-//   op and its nested ops are ignored.
-static bool canBeHoisted(Operation *op,
-                         function_ref<bool(Value)> definedOutside) {
+bool mlir::canBeHoistedOutOfRegion(Operation *op,
+                                   function_ref<bool(Value)> definedOutside) {
   // Check that dependencies are defined outside of loop.
   if (!llvm::all_of(op->getOperands(), definedOutside))
     return false;
@@ -67,7 +62,7 @@ static bool canBeHoisted(Operation *op,
   for (auto &region : op->getRegions()) {
     for (auto &block : region) {
       for (auto &innerOp : block)
-        if (!canBeHoisted(&innerOp, definedOutside))
+        if (!canBeHoistedOutOfRegion(&innerOp, definedOutside))
           return false;
     }
   }
@@ -94,7 +89,7 @@ LogicalResult mlir::moveLoopInvariantCode(LoopLikeOpInterface looplike) {
   // rewriting. If the nested regions are loops, they will have been processed.
   for (auto &block : loopBody) {
     for (auto &op : block.without_terminator()) {
-      if (canBeHoisted(&op, isDefinedOutsideOfBody)) {
+      if (canBeHoistedOutOfRegion(&op, isDefinedOutsideOfBody)) {
         opsToMove.push_back(&op);
         willBeMovedSet.insert(&op);
       }

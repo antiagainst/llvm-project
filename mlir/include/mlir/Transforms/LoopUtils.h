@@ -321,6 +321,14 @@ LogicalResult
 separateFullTiles(MutableArrayRef<AffineForOp> nest,
                   SmallVectorImpl<AffineForOp> *fullTileNest = nullptr);
 
+// Checks whether the given op can be hoisted by checking that
+// - the op and any of its contained operations do not depend on SSA values
+//   defined inside of the region op (by means of calling definedOutside).
+// - the op has no side-effects. If sideEffecting is Never, sideeffects of this
+//   op and its nested ops are ignored.
+bool canBeHoistedOutOfRegion(Operation *op,
+                             function_ref<bool(Value)> definedOutside);
+
 /// Move loop invariant code out of `looplike`.
 LogicalResult moveLoopInvariantCode(LoopLikeOpInterface looplike);
 

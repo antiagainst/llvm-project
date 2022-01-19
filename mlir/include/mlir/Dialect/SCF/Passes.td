@@ -128,4 +128,16 @@ def SCFIfRegionExpansion
   }];
 }
 
+def SCFIfRegionHoisting
+  : FunctionPass<"if-region-hoisting"> {
+  let summary = "Hoists non-side-effecting ops in either scf.if regions ahead "
+                "of the scf.if op";
+  let constructor = "mlir::createIfRegionHoistingPass()";
+  let description = [{
+    This pass hoists non-side-effecting ops defined in either of the scf.if
+    region ahead of the scf.if op. This can be useful to enable further
+    optimizations like CSE.
+  }];
+}
+
 #endif // MLIR_DIALECT_SCF_PASSES

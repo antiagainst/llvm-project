@@ -59,6 +59,10 @@ std::unique_ptr<Pass> createForToWhileLoopPass();
 /// regions.
 std::unique_ptr<Pass> createIfRegionExpansionPass();
 
+/// Creates a pass to hoist non-side-effecting ops in either scf.if region ahead
+/// of the scf.if op.
+std::unique_ptr<Pass> createIfRegionHoistingPass();
+
 //===----------------------------------------------------------------------===//
 // Registration
 //===----------------------------------------------------------------------===//
