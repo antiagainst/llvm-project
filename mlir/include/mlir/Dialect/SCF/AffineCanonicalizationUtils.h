@@ -35,8 +35,8 @@ class IfOp;
 using LoopMatcherFn =
     function_ref<LogicalResult(Value, Value &, Value &, Value &)>;
 
-/// Try to canonicalize an min/max operations in the context of for `loops` with
-/// a known range.
+/// Try to canonicalize an affine min/max operation in the context of for
+/// `loops` with a known range.
 ///
 /// `map` is the body of the min/max operation and `operands` are the SSA values
 /// that the dimensions and symbols are bound to; dimensions are listed first.
@@ -49,6 +49,17 @@ using LoopMatcherFn =
 LogicalResult canonicalizeMinMaxOpInLoop(RewriterBase &rewriter, Operation *op,
                                          AffineMap map, ValueRange operands,
                                          bool isMin, LoopMatcherFn loopMatcher);
+
+/// Try to canonicalize an affine min/max operation in the regions of the given
+/// scf.if op by using constraints from its conditions.
+///
+/// Note: aside from natively recognized affine ops, `loopMatcher` will be
+/// queried to see if a value referenced is from any "for loop"-like operation.
+/// If so the range constraints from the loop will also be injected for problem
+/// solving.
+LogicalResult canonicalizeMinMaxOpInInIf(scf::IfOp ifOp,
+                                         scf::LoopMatcherFn loopMatcher,
+                                         RewriterBase &rewriter);
 
 /// Try to simplify a min/max operation `op` after loop peeling. This function
 /// can simplify min/max operations such as (ub is the previous upper bound of

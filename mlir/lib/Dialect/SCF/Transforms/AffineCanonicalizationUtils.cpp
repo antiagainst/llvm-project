@@ -199,9 +199,24 @@ addLoopRangeConstraints(FlatAffineValueConstraints &constraints, Value iv,
   if (!stepInt)
     return failure();
 
-  unsigned dimIv = constraints.appendDimId(iv);
-  unsigned dimLb = constraints.appendDimId(lb);
-  unsigned dimUb = constraints.appendDimId(ub);
+  // Create dims for iv, lb, and ub if not exist.
+  if (!constraints.containsId(iv))
+    constraints.appendDimId(iv);
+  if (!constraints.containsId(lb))
+    constraints.appendDimId(lb);
+  if (!constraints.containsId(ub))
+    constraints.appendDimId(ub);
+
+  // Query their column ids next. If we have iv/lb/ub bound to a symbol, the
+  // previous dim creation can enlarge its column id, given that dims are
+  // inserted before symbols.
+  unsigned dimIv, dimLb, dimUb;
+  constraints.findId(iv, &dimIv);
+  constraints.findId(lb, &dimLb);
+  constraints.findId(ub, &dimUb);
+  LLVM_DEBUG(llvm::dbgs() << "dim iv column id = " << dimIv << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "dim lb column id = " << dimLb << "\n");
+  LLVM_DEBUG(llvm::dbgs() << "dim ub column id = " << dimUb << "\n");
 
   // If loop lower/upper bounds are constant: Add EQ constraint.
   Optional<int64_t> lbInt = getConstantIntValue(lb);
@@ -322,4 +337,205 @@ LogicalResult scf::rewritePeeledMinMaxOp(RewriterBase &rewriter, Operation *op,
   }
 
   return canonicalizeMinMaxOp(rewriter, op, map, operands, isMin, constraints);
+}
+
+/// Collect leaf conditions in nested and conditions specified in `values` into
+/// `conditions`. Return failure if unsupported cases are found.
+static LogicalResult collectAndCases(ValueRange values,
+                                     SmallVectorImpl<Value> &conditions) {
+  for (Value value : values) {
+    Operation *op = value.getDefiningOp();
+    if (!op)
+      return failure();
+
+    if (auto andOp = dyn_cast<arith::AndIOp>(op)) {
+      if (!andOp.getType().isInteger(1) ||
+          failed(collectAndCases(andOp.getOperands(), conditions)))
+        return failure();
+    } else if (isa<arith::CmpIOp>(op)) {
+      conditions.push_back(value);
+    } else {
+      return failure();
+    }
+  }
+  return success();
+}
+
+/// Add constraints expressed by `conditions` into `constraints`; return failure
+/// if there are unsupported constraints or any other failures.
+///
+/// Each condition in `conditions` should be the resultant value from some
+/// affine ops or cmpi op. If there are multiple conditions in `conditions`, all
+/// are injected into `constraints`, so they are effectively logically and'ed.
+///
+/// Additionally recognize loop induction variables and inject its ranges as
+/// specified via `loopMatcher`.
+static LogicalResult
+addIfConditionConstraints(FlatAffineValueConstraints &constraints,
+                          ValueRange conditions, scf::LoopMatcherFn loopMatcher,
+                          RewriterBase &rewriter) {
+  auto worklist = llvm::to_vector<8>(conditions);
+  LLVM_DEBUG({
+    llvm::dbgs() << "initial and conditions:\n";
+    for (Value v : worklist)
+      llvm::dbgs() << "  " << v << "\n";
+  });
+
+  // Go through each value in the worklist to build up constraints. The worklist
+  // will grow as we will push each processed value's defining op's operands to
+  // it. It's guaranteed to stop because the DAG property of SSA graphs.
+  DenseSet<Value> seenValues;
+  for (int i = 0; i < worklist.size(); ++i) {
+    Value workitem = worklist[i];
+    // Don't handle already processed values again.
+    if (seenValues.contains(workitem))
+      continue;
+    seenValues.insert(workitem);
+
+    LLVM_DEBUG(llvm::dbgs() << "processing " << workitem << "...\n");
+    if (auto cmpOp = workitem.getDefiningOp<arith::CmpIOp>()) {
+      if (cmpOp.getPredicate() != arith::CmpIPredicate::eq)
+        return failure(); // Only support equality comparsion for now.
+
+      IntegerAttr cmpRhs;
+      if (!matchPattern(cmpOp.getRhs(), m_Constant(&cmpRhs)))
+        return failure(); // Only support comparing against constants for now.
+
+      Value cmpLhs = cmpOp.getLhs();
+
+      // Try to see if the LHS value is already associated with some dimension
+      // or symbol in the constraints. Otherwise, create a new one for it.
+      unsigned lhsPos;
+      if (!constraints.findId(cmpLhs, &lhsPos))
+        lhsPos = constraints.appendDimId(cmpLhs);
+
+      // The LHS value has a constant bound.
+      constraints.addBound(FlatAffineConstraints::EQ, lhsPos, cmpRhs.getInt());
+
+      // Push the LHS value to the end of the worklist to see if we can deduce
+      // more constraints from it too later.
+      worklist.push_back(cmpLhs);
+    } else if (auto applyOp = workitem.getDefiningOp<AffineApplyOp>()) {
+      // Try to see if the result value is already associated with some
+      // dimension or symbol in the constraints. Otherwise, create a new one.
+      unsigned resultPos;
+      if (!constraints.findId(applyOp, &resultPos))
+        resultPos = constraints.appendDimId(workitem);
+      LLVM_DEBUG(llvm::dbgs() << "result column id = " << resultPos << "\n");
+
+      // The result value is equal to the result of the affine expression.
+      if (failed(alignAndAddBound(constraints, FlatAffineConstraints::EQ,
+                                  resultPos, applyOp.getAffineMap(),
+                                  applyOp.getMapOperands())))
+        return failure();
+
+      // Enqueue new operands for processing later.
+      for (Value operand : applyOp.getMapOperands())
+        worklist.push_back(operand);
+    } else if (auto minOp = workitem.getDefiningOp<AffineMinOp>()) {
+      unsigned resultPos;
+      if (!constraints.findId(minOp, &resultPos))
+        resultPos = constraints.appendDimId(workitem);
+      LLVM_DEBUG(llvm::dbgs() << "result column id = " << resultPos << "\n");
+
+      // Upper bounds are exclusive, so add 1. (`affine.min` ops are inclusive.)
+      AffineMap ubMap = addConstToResults(minOp.getAffineMap(), 1);
+      LLVM_DEBUG(llvm::dbgs() << "upper bound map: " << ubMap << "\n");
+
+      // The affine.min op result is less than the result of each affine
+      // expressions + 1.
+      if (failed(alignAndAddBound(constraints, FlatAffineConstraints::UB,
+                                  resultPos, ubMap, minOp.getMapOperands())))
+        return failure();
+
+      // Enqueue new operands for processing later.
+      for (Value operand : minOp.getMapOperands())
+        worklist.push_back(operand);
+    } else if (auto maxOp = workitem.getDefiningOp<AffineMaxOp>()) {
+      unsigned resultPos;
+      if (!constraints.findId(maxOp, &resultPos))
+        resultPos = constraints.appendDimId(workitem);
+      LLVM_DEBUG(llvm::dbgs() << "result column id = " << resultPos << "\n");
+
+      // The affine.max op result is greater than or equal the result of each
+      // affine expressions.
+      if (failed(alignAndAddBound(constraints, FlatAffineConstraints::LB,
+                                  resultPos, maxOp.getAffineMap(),
+                                  maxOp.getMapOperands())))
+        return failure();
+
+      // Enqueue new operands for processing later.
+      for (Value operand : maxOp.getMapOperands())
+        worklist.push_back(operand);
+    } else {
+      IntegerAttr intAttr;
+      Value iv = workitem, lb, ub, step;
+      if (matchPattern(workitem, m_Constant(&intAttr))) {
+        unsigned resultPos;
+        if (!constraints.findId(workitem, &resultPos))
+          resultPos = constraints.appendDimId(workitem);
+        constraints.addBound(FlatAffineConstraints::EQ, workitem,
+                             intAttr.getValue().getSExtValue());
+      } else if (loopMatcher && succeeded(loopMatcher(iv, lb, ub, step))) {
+        LLVM_DEBUG({
+          llvm::dbgs() << "matched loop bounds and steps:\n";
+          llvm::dbgs() << "  lower bound: " << lb << "\n";
+          llvm::dbgs() << "  upper bound: " << ub << "\n";
+          llvm::dbgs() << "  step: " << step << "\n";
+        });
+        OpBuilder::InsertionGuard guard(rewriter);
+        if (failed(addLoopRangeConstraints(constraints, iv, lb, ub, step,
+                                           rewriter)))
+          return failure();
+      } else {
+        LLVM_DEBUG(llvm::dbgs() << "unsupported op: " << workitem << "\n");
+        return failure();
+      }
+    }
+    LLVM_DEBUG(llvm::dbgs() << "after processing " << workitem << ":\n");
+    LLVM_DEBUG(constraints.print(llvm::dbgs()));
+  }
+
+  return success();
+}
+
+LogicalResult scf::canonicalizeMinMaxOpInInIf(scf::IfOp ifOp,
+                                              scf::LoopMatcherFn loopMatcher,
+                                              RewriterBase &rewriter) {
+  SmallVector<Value, 4> conditions;
+  if (failed(collectAndCases(ifOp.getCondition(), conditions)))
+    return failure();
+
+  FlatAffineValueConstraints constraints;
+  if (failed(addIfConditionConstraints(constraints, conditions, loopMatcher,
+                                       rewriter)))
+    return failure();
+
+  auto walkResult = ifOp.getThenRegion().walk(
+      [constraints, &loopMatcher, &rewriter](AffineMinOp minOp) {
+        // Make a copy of the existing constraints for this affine.min op
+        // specifically.
+        FlatAffineValueConstraints minConstraints(constraints);
+        DenseSet<Value> allIvs;
+
+        for (Value operand : minOp.getOperands()) {
+          Value iv = operand;
+          Value lb, ub, step;
+          if (failed(loopMatcher(operand, lb, ub, step)))
+            continue;
+          allIvs.insert(iv);
+
+          if (failed(addLoopRangeConstraints(minConstraints, iv, lb, ub, step,
+                                             rewriter)))
+            return WalkResult::interrupt();
+        }
+        if (failed(canonicalizeMinMaxOp(rewriter, minOp, minOp.getAffineMap(),
+                                        minOp.getMapOperands(), /*isMin=*/true,
+                                        minConstraints))) {
+          return WalkResult::interrupt();
+        }
+        return WalkResult::advance();
+      });
+
+  return success(!walkResult.wasInterrupted());
 }
