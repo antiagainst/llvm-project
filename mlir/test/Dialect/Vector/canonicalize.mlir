@@ -1397,3 +1397,126 @@ func @extract_element_fold() -> i32 {
   %1 = vector.extractelement %v[%i : i32] : vector<4xi32>
   return %1 : i32
 }
+
+// -----
+
+// CHECK-LABEL: func @extract_vectors_disjoint_dims
+//  CHECK-SAME: (%[[V0:.+]]: vector<4xf16>, %[[V1:.+]]: vector<4xf16>, %[[V2:.+]]: vector<3xf16>, %[[V3:.+]]: vector<5xf16>, %[[V4:.+]]: vector<4xf16>, %[[V5:.+]]: vector<4xf16>)
+//       CHECK:   %[[INIT:.+]] = arith.constant dense<0.000000e+00> : vector<8xf16>
+//       CHECK:   %[[ISS0:.+]] = vector.insert_strided_slice %[[V0]], %[[INIT]] {offsets = [0], strides = [1]}
+//       CHECK:   %[[ISS1:.+]] = vector.insert_strided_slice %[[V1]], %[[ISS0]] {offsets = [4], strides = [1]}
+//       CHECK:   %[[ISS2:.+]] = vector.insert_strided_slice %[[V2]], %[[INIT]] {offsets = [0], strides = [1]}
+//       CHECK:   %[[ISS3:.+]] = vector.insert_strided_slice %[[V3]], %[[ISS2]] {offsets = [3], strides = [1]}
+//       CHECK:   %[[ISS4:.+]] = vector.insert_strided_slice %[[V4]], %[[INIT]] {offsets = [0], strides = [1]}
+//       CHECK:   %[[ISS5:.+]] = vector.insert_strided_slice %[[V5]], %[[ISS4]] {offsets = [4], strides = [1]}
+//       CHECK:   return %[[ISS1]], %[[ISS3]], %[[ISS5]]
+
+func @extract_vectors_disjoint_dims(
+    %v0: vector<4xf16>, %v1: vector<4xf16>,
+    %v2: vector<3xf16>, %v3: vector<5xf16>,
+    %v4: vector<4xf16>, %v5: vector<4xf16>
+  ) -> (vector<8xf16>, vector<8xf16>, vector<8xf16>) {
+  %init = arith.constant dense<0.0> : vector<3x8xf16>
+  // [0, *]
+  %0 = vector.insert_strided_slice %v0, %init {offsets = [0, 0], strides = [1]} : vector<4xf16> into vector<3x8xf16>
+  %1 = vector.insert_strided_slice %v1, %0    {offsets = [0, 4], strides = [1]} : vector<4xf16> into vector<3x8xf16>
+  // [1, *]: different partition from [0, *]
+  %2 = vector.insert_strided_slice %v2, %1    {offsets = [1, 0], strides = [1]} : vector<3xf16> into vector<3x8xf16>
+  %3 = vector.insert_strided_slice %v3, %2    {offsets = [1, 3], strides = [1]} : vector<5xf16> into vector<3x8xf16>
+  // [2, *]: same partition as [0, *]
+  %4 = vector.insert_strided_slice %v4, %3    {offsets = [2, 0], strides = [1]} : vector<4xf16> into vector<3x8xf16>
+  %5 = vector.insert_strided_slice %v5, %4    {offsets = [2, 4], strides = [1]} : vector<4xf16> into vector<3x8xf16>
+  %6 = vector.extract %5[0] : vector<3x8xf16>
+  %7 = vector.extract %5[1] : vector<3x8xf16>
+  %8 = vector.extract %5[2] : vector<3x8xf16>
+  return %6, %7, %8 : vector<8xf16>, vector<8xf16>, vector<8xf16>
+}
+
+// -----
+
+// CHECK-LABEL: func @extract_vectors_multiple_vectors
+//  CHECK-SAME: (%[[V0:.+]]: vector<3xf16>, %[[V1:.+]]: vector<2xf16>, %[[V2:.+]]: vector<1xf16>)
+//       CHECK:   %[[INIT:.+]] = arith.constant dense<0.000000e+00> : vector<6xf16>
+//       CHECK:   %[[ISS0:.+]] = vector.insert_strided_slice %[[V0]], %[[INIT]] {offsets = [0], strides = [1]}
+//       CHECK:   %[[ISS1:.+]] = vector.insert_strided_slice %[[V1]], %[[ISS0]] {offsets = [3], strides = [1]}
+//       CHECK:   %[[ISS2:.+]] = vector.insert_strided_slice %[[V2]], %[[ISS1]] {offsets = [5], strides = [1]}
+//       CHECK:   return %[[ISS2]]
+
+func @extract_vectors_multiple_vectors(%v0: vector<3xf16>, %v1: vector<2xf16>, %v2: vector<1xf16>) -> vector<6xf16> {
+  %init = arith.constant dense<0.0> : vector<2x6xf16>
+  %0 = vector.insert_strided_slice %v0, %init {offsets = [0, 0], strides = [1]} : vector<3xf16> into vector<2x6xf16>
+  %1 = vector.insert_strided_slice %v1, %0    {offsets = [0, 3], strides = [1]} : vector<2xf16> into vector<2x6xf16>
+  %2 = vector.insert_strided_slice %v2, %1    {offsets = [0, 5], strides = [1]} : vector<1xf16> into vector<2x6xf16>
+  %3 = vector.extract %2[0] : vector<2x6xf16>
+  return %3: vector<6xf16>
+}
+
+// -----
+
+// CHECK-LABEL: func @extract_vectors_overwrite_same_range
+//  CHECK-SAME: (%{{.+}}: vector<3xf16>, %[[V1:.+]]: vector<2xf16>, %[[V2:.+]]: vector<3xf16>)
+//       CHECK:   %[[INIT:.+]] = arith.constant dense<0.000000e+00> : vector<5xf16>
+//       CHECK:   %[[ISS1:.+]] = vector.insert_strided_slice %[[V2]], %[[INIT]] {offsets = [0], strides = [1]}
+//       CHECK:   %[[ISS2:.+]] = vector.insert_strided_slice %[[V1]], %[[ISS1]] {offsets = [3], strides = [1]}
+//       CHECK:   return %[[ISS2]]
+func @extract_vectors_overwrite_same_range(%v0: vector<3xf16>, %v1: vector<2xf16>, %v2: vector<3xf16>) -> vector<5xf16> {
+  %init = arith.constant dense<0.0> : vector<2x5xf16>
+  %0 = vector.insert_strided_slice %v0, %init {offsets = [0, 0], strides = [1]} : vector<3xf16> into vector<2x5xf16>
+  %1 = vector.insert_strided_slice %v1, %0    {offsets = [0, 3], strides = [1]} : vector<2xf16> into vector<2x5xf16>
+  // Writing to [0, 0-2] again
+  %2 = vector.insert_strided_slice %v2, %1    {offsets = [0, 0], strides = [1]} : vector<3xf16> into vector<2x5xf16>
+  %3 = vector.extract %2[0] : vector<2x5xf16>
+  return %3: vector<5xf16>
+}
+
+// -----
+
+// CHECK-LABEL: func @extract_vectors_diff_src_rank
+//       CHECK: vector.extract
+func @extract_vectors_diff_src_rank(%v0: vector<1x3xf16>, %v1: vector<2xf16>) -> vector<5xf16> {
+  %init = arith.constant dense<0.0> : vector<2x5xf16>
+  %0 = vector.insert_strided_slice %v0, %init {offsets = [0, 0], strides = [1, 1]} : vector<1x3xf16> into vector<2x5xf16>
+  %1 = vector.insert_strided_slice %v1, %0    {offsets = [0, 3], strides = [1]} : vector<2xf16> into vector<2x5xf16>
+  %3 = vector.extract %1[0] : vector<2x5xf16>
+  return %3: vector<5xf16>
+}
+
+// -----
+
+// CHECK-LABEL: func @extract_vectors_not_full_range
+//       CHECK: vector.extract
+func @extract_vectors_not_full_range(%v0: vector<3xf16>, %v1: vector<2xf16>, %v2: vector<1xf16>) -> vector<6xf16> {
+  %init = arith.constant dense<0.0> : vector<2x6xf16>
+  %0 = vector.insert_strided_slice %v0, %init {offsets = [0, 0], strides = [1]} : vector<3xf16> into vector<2x6xf16>
+  %1 = vector.insert_strided_slice %v1, %0    {offsets = [0, 3], strides = [1]} : vector<2xf16> into vector<2x6xf16>
+  // Missing insert to [0, 5]
+  %3 = vector.extract %1[0] : vector<2x6xf16>
+  return %3: vector<6xf16>
+}
+
+// -----
+
+// CHECK-LABEL: func @extract_vectors_overwrite_overlapping_range
+//       CHECK: vector.extract
+func @extract_vectors_overwrite_overlapping_range(%v0: vector<3xf16>, %v1: vector<2xf16>, %v2: vector<3xf16>) -> vector<7xf16> {
+  %init = arith.constant dense<0.0> : vector<2x7xf16>
+  %0 = vector.insert_strided_slice %v0, %init {offsets = [0, 0], strides = [1]} : vector<3xf16> into vector<2x7xf16>
+  %1 = vector.insert_strided_slice %v1, %0    {offsets = [0, 3], strides = [1]} : vector<2xf16> into vector<2x7xf16>
+  %2 = vector.insert_strided_slice %v2, %1    {offsets = [0, 4], strides = [1]} : vector<3xf16> into vector<2x7xf16>
+  %3 = vector.extract %2[0] : vector<2x7xf16>
+  return %3: vector<7xf16>
+}
+
+// -----
+
+// CHECK-LABEL: func @extract_vectors_multiple_partial_dims
+//       CHECK: vector.extract
+func @extract_vectors_multiple_partial_dims(%v0: vector<2x4xf16>, %v1: vector<2x4xf16>, %v2: vector<2x4xf16>, %v3: vector<2x4xf16>) -> (vector<4x8xf16>) {
+  %init = arith.constant dense<0.0> : vector<1x4x8xf16>
+  %0 = vector.insert_strided_slice %v0, %init {offsets = [0, 0, 0], strides = [1, 1]} : vector<2x4xf16> into vector<1x4x8xf16>
+  %1 = vector.insert_strided_slice %v1, %0    {offsets = [0, 0, 4], strides = [1, 1]} : vector<2x4xf16> into vector<1x4x8xf16>
+  %2 = vector.insert_strided_slice %v2, %1    {offsets = [0, 2, 0], strides = [1, 1]} : vector<2x4xf16> into vector<1x4x8xf16>
+  %3 = vector.insert_strided_slice %v3, %2    {offsets = [0, 2, 4], strides = [1, 1]} : vector<2x4xf16> into vector<1x4x8xf16>
+  %4 = vector.extract %3[0] : vector<1x4x8xf16>
+  return %4: vector<4x8xf16>
+}

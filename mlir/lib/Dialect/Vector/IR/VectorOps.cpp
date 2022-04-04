@@ -1538,11 +1538,177 @@ public:
   }
 };
 
+/// Folds vector.extract where we are extracting multiple source vectors
+/// inserted from previous vector.insert_stridec_slice ops. That is, folds
+/// the following pattern:
+///   %init = ... : vector<4x5xf32>
+///   %0 = vector.insert_strided_slice %v0, %init {offsets = [1, 0], ...}
+///        : vector<3xf32> into ...
+///   %1 = vector.insert_strided_slice %v1, %0    {offsets = [1, 3], ...}
+///        : vector<2xf32> into ...
+///   %r = vector.extract %1[1]
+/// Into
+///   %init = ... : vector<5xf32>
+///   %0 = vector.insert_strided_slice %v0, %init : vector<3xf32> into ...
+///   %r = vector.insert_strided_slice %v1, %0    : vector<2xf32> into ...
+struct FoldExtractMultipleVectors : public OpRewritePattern<ExtractOp> {
+  using OpRewritePattern::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(ExtractOp extractOp,
+                                PatternRewriter &rewriter) const override {
+    auto extractDstType = extractOp.getType().dyn_cast<VectorType>();
+    if (!extractDstType)
+      return failure();
+    auto extractSrcType = extractOp.getVector().getType().cast<VectorType>();
+    int64_t extractRankDiff =
+        extractSrcType.getRank() - extractDstType.getRank();
+
+    // Keep track of which dimension has partial overlap inserts and their
+    // inserting ranges and inserted values.
+    Optional<unsigned> partialOverlapDim;
+    DenseMap<std::pair<int, int>, Value> partialOverlapRangeValues;
+
+    // Go through all previous insert ops in the chain and collect those
+    // inserting elements into the extract range.
+    auto extractOffsets = extractVector<int64_t>(extractOp.getPosition());
+    auto insertOp = extractOp.getVector().getDefiningOp<InsertStridedSliceOp>();
+    for (; insertOp;
+         insertOp = insertOp.getDest().getDefiningOp<InsertStridedSliceOp>()) {
+      VectorType insertSrcType = insertOp.getSourceVectorType();
+      VectorType insertDstType = insertOp.getDestVectorType();
+      int64_t insertRankDiff =
+          insertDstType.getRank() - insertSrcType.getRank();
+      if (extractDstType.getRank() != insertSrcType.getRank())
+        return failure();
+
+      auto insertOffsets = extractVector<int64_t>(insertOp.getOffsets());
+      if (llvm::any_of(insertOp.getStrides(), [](Attribute attr) {
+            return attr.cast<IntegerAttr>().getInt() != 1;
+          }))
+        return failure();
+
+      SmallVector<unsigned, 4> overlapDims;
+      SmallVector<std::pair<int, int>, 4> overlapRanges;
+      for (unsigned dim = 0, e = extractSrcType.getRank(); dim < e; ++dim) {
+        // Calculate the insert range [start, end).
+        int64_t insertStart = insertOffsets[dim];
+        int64_t insertSize = 1;
+        if (dim >= insertRankDiff)
+          insertSize = insertSrcType.getDimSize(dim - insertRankDiff);
+        int64_t insertEnd = insertStart + insertSize;
+
+        // Calculate the extract range [start, end).
+        int64_t extractStart = 0;
+        if (dim < extractOffsets.size())
+          extractStart = extractOffsets[dim];
+        int64_t extractSize = 1;
+        if (dim >= extractRankDiff)
+          extractSize = extractDstType.getDimSize(dim - extractRankDiff);
+        int64_t extractEnd = extractStart + extractSize;
+
+        // If for this dimension the insert and extract ranges are disjoint,
+        // this insert op does not overlap with our extract at all. Ignore it.
+        if (insertStart >= extractEnd || insertEnd <= extractStart) {
+          overlapDims.clear();
+          overlapRanges.clear();
+          break;
+        }
+
+        // Skip fully overlap ranges.
+        if (insertStart == extractStart && insertEnd == extractEnd)
+          continue;
+
+        // Record cases where inserts cover a part of the extract ranges.
+        if (insertStart >= extractStart && insertEnd <= extractEnd) {
+          overlapDims.push_back(dim);
+          overlapRanges.emplace_back(insertStart, insertEnd);
+        } else {
+          return failure();
+        }
+      }
+
+      if (overlapDims.empty())
+        continue;
+
+      // Only support one partial overlap dimension for now.
+      if (overlapDims.size() > 1)
+        return failure();
+
+      if (!partialOverlapDim)
+        partialOverlapDim = overlapDims.front();
+
+      // Make sure the overlap dimension is the same across all insert ops.
+      if (*partialOverlapDim != overlapDims.front())
+        return failure();
+
+      // Only keep the latest insert op's range.
+      if (partialOverlapRangeValues.find(overlapRanges.front()) ==
+          partialOverlapRangeValues.end()) {
+        partialOverlapRangeValues[overlapRanges.front()] = insertOp.getSource();
+      }
+    }
+
+    if (!partialOverlapDim)
+      return failure();
+
+    int64_t start = 0;
+    if (*partialOverlapDim < extractOffsets.size())
+      start = extractOffsets[*partialOverlapDim];
+    int64_t size = 1;
+    if (*partialOverlapDim >= extractRankDiff)
+      size = extractDstType.getDimSize(*partialOverlapDim - extractRankDiff);
+    int64_t end = start + size;
+
+    SmallVector<Value, 4> values;
+    SmallVector<int64_t, 4> sizes;
+    while (start < end) {
+      bool found = false;
+      for (auto it = partialOverlapRangeValues.begin();
+           it != partialOverlapRangeValues.end(); ++it) {
+        const auto &range = it->first;
+        if (range.first == start) {
+          found = true;
+          values.push_back(it->second);
+          sizes.push_back(range.second - range.first);
+          start = range.second;
+          partialOverlapRangeValues.erase(it);
+          break;
+        }
+      }
+      // Partially overlapping inserts do not cover the full extract range.
+      if (!found)
+        return failure();
+    }
+    // More partial overlapping inserts than needed --- insert overlapping
+    // themselves!
+    if (!partialOverlapRangeValues.empty())
+      return failure();
+
+    Location loc = extractOp.getLoc();
+
+    // The initial value doesn't matter; we will overwrite all elements anyway.
+    Value result = rewriter.create<arith::ConstantOp>(
+        loc, extractDstType, rewriter.getZeroAttr(extractDstType));
+
+    SmallVector<int64_t, 4> offsets(extractDstType.getRank(), 0);
+    SmallVector<int64_t, 1> strides(extractDstType.getRank(), 1);
+    for (int i = 0, e = values.size(); i < e; ++i) {
+      result = rewriter.create<InsertStridedSliceOp>(loc, values[i], result,
+                                                     /*offsets=*/offsets,
+                                                     /*strides=*/strides);
+      offsets[*partialOverlapDim - extractRankDiff] += sizes[i];
+    }
+    rewriter.replaceOp(extractOp, ValueRange{result});
+    return success();
+  }
+};
+
 } // namespace
 
 void ExtractOp::getCanonicalizationPatterns(RewritePatternSet &results,
                                             MLIRContext *context) {
-  results.add<ExtractOpConstantFolder, ExtractOpFromBroadcast>(context);
+  results.add<ExtractOpConstantFolder, ExtractOpFromBroadcast,
+              FoldExtractMultipleVectors>(context);
 }
 
 static void populateFromInt64AttrArray(ArrayAttr arrayAttr,
