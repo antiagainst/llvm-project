@@ -936,6 +936,21 @@ struct CombineContractTranspose
   }
 };
 
+/// Returns true if the given `lhsMap` and `rhsMap` from a vector.contract op
+/// use a reduction dimension access pair.
+static bool usesReductionPair(AffineMap lhsMap, AffineMap rhsMap,
+                              ArrayAttr iteratorTypes) {
+  for (const auto &it : llvm::enumerate(iteratorTypes)) {
+    if (!isReductionIterator(it.value()))
+      continue;
+    auto lhsDim = getResultIndex(lhsMap, it.index());
+    auto rhsDim = getResultIndex(rhsMap, it.index());
+    if (lhsDim && rhsDim)
+      return true;
+  }
+  return false;
+}
+
 /// Merge BroadcastOp into ContractionOp user.
 /// Ex:
 /// ```
@@ -1005,10 +1020,32 @@ struct CombineContractBroadcast
     }
     if (!changed)
       return failure();
-    rewriter.replaceOpWithNewOp<vector::ContractionOp>(
-        contractOp, lhs, rhs, contractOp.getAcc(),
-        rewriter.getAffineMapArrayAttr(maps), contractOp.getIteratorTypes());
-    return success();
+
+    // We need to make sure at least one reduction dimension pair is actually
+    // used to generate valid vector.contract ops.
+    ArrayAttr iteratorTypes = contractOp.getIteratorTypes();
+    if (usesReductionPair(maps[0], maps[1], iteratorTypes)) {
+      rewriter.replaceOpWithNewOp<vector::ContractionOp>(
+          contractOp, lhs, rhs, contractOp.getAcc(),
+          rewriter.getAffineMapArrayAttr(maps), contractOp.getIteratorTypes());
+      return success();
+    }
+
+    if (llvm::none_of(maps, [&](AffineMap map) {
+          for (int i = 0, e = map.getNumResults(); i < e; ++i)
+            if (isReductionIterator(iteratorTypes[map.getDimPosition(i)]))
+              return true;
+          return false;
+        })) {
+      // After combining, all access are through parallel dimensions. It can be
+      // simplified into a vector.fma op if all maps are the same.
+      if (llvm::is_splat(maps)) {
+        rewriter.replaceOpWithNewOp<vector::FMAOp>(contractOp, lhs, rhs,
+                                                   contractOp.getAcc());
+        return success();
+      }
+    }
+    return failure();
   }
 };
 
