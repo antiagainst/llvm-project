@@ -1420,3 +1420,55 @@ func @extract_element_fold() -> i32 {
   %1 = vector.extractelement %v[%i : i32] : vector<4xi32>
   return %1 : i32
 }
+
+// -----
+
+// CHECK-LABEL: func @contract_to_fma
+//  CHECK-SAME: (%[[A:.+]]: vector<1x1x4xf32>, %[[B:.+]]: vector<1x1x4xf32>, %[[C:.+]]: vector<4xf32>)
+//       CHECK:   %[[CASTA:.+]] = vector.shape_cast %[[A]] : vector<1x1x4xf32> to vector<4xf32>
+//       CHECK:   %[[CASTB:.+]] = vector.shape_cast %[[B]] : vector<1x1x4xf32> to vector<4xf32>
+//       CHECK:   %[[FMA:.+]] = vector.fma %[[CASTA]], %[[CASTB]], %[[C]] : vector<4xf32>
+//       CHECK:   return %[[FMA]] : vector<4xf32>
+func @contract_to_fma(%a: vector<1x1x4xf32>, %b: vector<1x1x4xf32>, %c: vector<4xf32>) -> vector<4xf32> {
+  %contract = vector.contract {
+    indexing_maps = [affine_map<(d0, d1, d2) -> (d1, d2, d0)>, affine_map<(d0, d1, d2) -> (d1, d2, d0)>, affine_map<(d0, d1, d2) -> (d0)>],
+    iterator_types = ["parallel", "reduction", "reduction"], kind = #vector.kind<add>
+  } %a, %b, %c : vector<1x1x4xf32>, vector<1x1x4xf32> into vector<4xf32>
+  return %contract: vector<4xf32>
+}
+
+// -----
+
+// CHECK-LABEL: func @contract_to_fma_i32
+//       CHECK: vector.contract
+func @contract_to_fma_i32(%a: vector<1x1x4xi32>, %b: vector<1x1x4xi32>, %c: vector<4xi32>) -> vector<4xi32> {
+  %contract = vector.contract {
+    indexing_maps = [affine_map<(d0, d1, d2) -> (d1, d2, d0)>, affine_map<(d0, d1, d2) -> (d1, d2, d0)>, affine_map<(d0, d1, d2) -> (d0)>],
+    iterator_types = ["parallel", "reduction", "reduction"], kind = #vector.kind<add>
+  } %a, %b, %c : vector<1x1x4xi32>, vector<1x1x4xi32> into vector<4xi32>
+  return %contract: vector<4xi32>
+}
+
+// -----
+
+// CHECK-LABEL: func @contract_to_fma_maxf
+//       CHECK: vector.contract
+func @contract_to_fma_maxf(%a: vector<1x1x4xf32>, %b: vector<1x1x4xf32>, %c: vector<4xf32>) -> vector<4xf32> {
+  %contract = vector.contract {
+    indexing_maps = [affine_map<(d0, d1, d2) -> (d1, d2, d0)>, affine_map<(d0, d1, d2) -> (d1, d2, d0)>, affine_map<(d0, d1, d2) -> (d0)>],
+    iterator_types = ["parallel", "reduction", "reduction"], kind = #vector.kind<maxf>
+  } %a, %b, %c : vector<1x1x4xf32>, vector<1x1x4xf32> into vector<4xf32>
+  return %contract: vector<4xf32>
+}
+
+// -----
+
+// CHECK-LABEL: func @contract_to_fma_diff_map
+//       CHECK: vector.contract
+func @contract_to_fma_diff_map(%a: vector<1xf32>, %b: vector<1x4xf32>, %c: vector<4xf32>) -> vector<4xf32> {
+  %contract = vector.contract {
+    indexing_maps = [affine_map<(d0, d1) -> (d1)>, affine_map<(d0, d1) -> (d1, d0)>, affine_map<(d0, d1) -> (d0)>],
+    iterator_types = ["parallel", "reduction"], kind = #vector.kind<add>
+  } %a, %b, %c : vector<1xf32>, vector<1x4xf32> into vector<4xf32>
+  return %contract: vector<4xf32>
+}

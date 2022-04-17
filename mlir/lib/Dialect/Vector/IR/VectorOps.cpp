@@ -31,6 +31,7 @@
 #include "mlir/IR/TypeUtilities.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/MathExtras.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/bit.h"
 #include <numeric>
@@ -907,10 +908,77 @@ struct CanonicalizeContractAdd : public OpRewritePattern<AddOpType> {
   }
 };
 
+/// Canonicalizes vector.contract with all size one reduction dimensions to
+/// vector.fma ops when possible.
+struct ConvertContractToFMA : public OpRewritePattern<vector::ContractionOp> {
+  using OpRewritePattern::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(vector::ContractionOp contractOp,
+                                PatternRewriter &rewriter) const override {
+    // The reduction part should be addition on float element types.
+    if (contractOp.getKind() != vector::CombiningKind::ADD ||
+        !getElementTypeOrSelf(contractOp.getType()).isa<FloatType>())
+      return failure();
+
+    ArrayRef<int64_t> lhsShape = contractOp.getLhsType().getShape();
+    ArrayRef<int64_t> rhsShape = contractOp.getRhsType().getShape();
+
+    // Collect reduction dimensions for both LHS and RHS.
+    auto reductionDimPairs = contractOp.getContractingDimMap();
+    SmallVector<unsigned> lhsReductionDims, rhsReductionDims;
+    lhsReductionDims.reserve(reductionDimPairs.size());
+    rhsReductionDims.reserve(reductionDimPairs.size());
+    for (const auto &lhsRhs : reductionDimPairs) {
+      // Require all reduction dimensions to be of size one to canonicalize.
+      if (lhsShape[lhsRhs.first] != 1 || rhsShape[lhsRhs.second] != 1)
+        return failure();
+      lhsReductionDims.push_back(lhsRhs.first);
+      rhsReductionDims.push_back(lhsRhs.second);
+    }
+
+    // Filter out reduction dimensions for LHS and RHS.
+    SmallVector<unsigned> lhsParallelDims, rhsParallelDims;
+    SmallVector<int64_t> newLhsShape, newRhsShape;
+    for (unsigned i = 0, e = lhsShape.size(); i < e; ++i)
+      if (!llvm::is_contained(lhsReductionDims, i)) {
+        lhsParallelDims.push_back(i);
+        newLhsShape.push_back(lhsShape[i]);
+      }
+    for (unsigned i = 0, e = rhsShape.size(); i < e; ++i)
+      if (!llvm::is_contained(rhsReductionDims, i)) {
+        rhsParallelDims.push_back(i);
+        newRhsShape.push_back(rhsShape[i]);
+      }
+
+    auto newLhsMap = contractOp.getIndexingMaps()[0].getSubMap(lhsParallelDims);
+    auto newRhsMap = contractOp.getIndexingMaps()[1].getSubMap(rhsParallelDims);
+    auto accMap = contractOp.getIndexingMaps()[2];
+    // After removing all size one reduction dimensions, all indexing maps
+    // should be the same to canonicalize.
+    if (newLhsMap != accMap || newRhsMap != accMap)
+      return failure();
+
+    Location loc = contractOp.getLoc();
+    auto newLhsType =
+        VectorType::get(newLhsShape, contractOp.getLhsType().getElementType());
+    auto newRhsType =
+        VectorType::get(newRhsShape, contractOp.getRhsType().getElementType());
+    Value newLhs = rewriter.create<vector::ShapeCastOp>(loc, newLhsType,
+                                                        contractOp.getLhs());
+    Value newRhs = rewriter.create<vector::ShapeCastOp>(loc, newRhsType,
+                                                        contractOp.getRhs());
+
+    rewriter.replaceOpWithNewOp<vector::FMAOp>(contractOp, newLhs, newRhs,
+                                               contractOp.getAcc());
+    return failure();
+  }
+};
+
 void ContractionOp::getCanonicalizationPatterns(RewritePatternSet &results,
                                                 MLIRContext *context) {
   results.add<CanonicalizeContractAdd<arith::AddIOp>,
-              CanonicalizeContractAdd<arith::AddFOp>>(context);
+              CanonicalizeContractAdd<arith::AddFOp>, ConvertContractToFMA>(
+      context);
 }
 
 //===----------------------------------------------------------------------===//
