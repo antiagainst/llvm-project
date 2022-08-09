@@ -19,7 +19,7 @@ spv.module Logical GLSL450 {
   // CHECK: spv.GlobalVariable @var5 bind(1, 3) : !spv.ptr<!spv.struct<(!spv.array<256 x f32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var5 bind(1,3) : !spv.ptr<!spv.struct<(!spv.array<256xf32>)>, StorageBuffer>
 
-  spv.func @kernel() -> () "None" {
+  spv.func @kernel() -> () <None> {
     %c0 = spv.Constant 0 : i32
     // CHECK: {{%.*}} = spv.mlir.addressof @var0 : !spv.ptr<!spv.struct<(i32 [0], !spv.struct<(f32 [0], i32 [4])> [4], f32 [12])>, Uniform>
     %0 = spv.mlir.addressof @var0 : !spv.ptr<!spv.struct<(i32, !spv.struct<(f32, i32)>, f32)>, Uniform>

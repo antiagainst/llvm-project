@@ -32,7 +32,7 @@ func.func @const() -> () {
 spv.module Logical GLSL450 {
   spv.GlobalVariable @global_var : !spv.ptr<f32, Input>
 
-  spv.func @addressof() -> () "None" {
+  spv.func @addressof() -> () <None> {
     // CHECK: %global_var_addr = spv.mlir.addressof 
     %0 = spv.mlir.addressof @global_var : !spv.ptr<f32, Input>
     spv.Return

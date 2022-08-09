@@ -88,20 +88,20 @@ func.func @simple_if_yield(%arg2 : memref<10xf32, #spv.storage_class<StorageBuff
   // CHECK-NEXT:  [[TRUE]]:
   // CHECK:         %[[RET1TRUE:.*]] = spv.Constant 0.000000e+00 : f32
   // CHECK:         %[[RET2TRUE:.*]] = spv.Constant 1.000000e+00 : f32
-  // CHECK-DAG:     spv.Store "Function" %[[VAR1]], %[[RET1TRUE]] : f32
-  // CHECK-DAG:     spv.Store "Function" %[[VAR2]], %[[RET2TRUE]] : f32
+  // CHECK-DAG:     spv.Store <Function> %[[VAR1]], %[[RET1TRUE]] : f32
+  // CHECK-DAG:     spv.Store <Function> %[[VAR2]], %[[RET2TRUE]] : f32
   // CHECK:         spv.Branch ^[[MERGE:.*]]
   // CHECK-NEXT:  [[FALSE]]:
   // CHECK:         %[[RET2FALSE:.*]] = spv.Constant 2.000000e+00 : f32
   // CHECK:         %[[RET1FALSE:.*]] = spv.Constant 3.000000e+00 : f32
-  // CHECK-DAG:     spv.Store "Function" %[[VAR1]], %[[RET1FALSE]] : f32
-  // CHECK-DAG:     spv.Store "Function" %[[VAR2]], %[[RET2FALSE]] : f32
+  // CHECK-DAG:     spv.Store <Function> %[[VAR1]], %[[RET1FALSE]] : f32
+  // CHECK-DAG:     spv.Store <Function> %[[VAR2]], %[[RET2FALSE]] : f32
   // CHECK:         spv.Branch ^[[MERGE]]
   // CHECK-NEXT:  ^[[MERGE]]:
   // CHECK:         spv.mlir.merge
   // CHECK-NEXT:  }
-  // CHECK-DAG:   %[[OUT1:.*]] = spv.Load "Function" %[[VAR1]] : f32
-  // CHECK-DAG:   %[[OUT2:.*]] = spv.Load "Function" %[[VAR2]] : f32
+  // CHECK-DAG:   %[[OUT1:.*]] = spv.Load <Function> %[[VAR1]] : f32
+  // CHECK-DAG:   %[[OUT2:.*]] = spv.Load <Function> %[[VAR2]] : f32
   // CHECK:       spv.Store "StorageBuffer" {{%.*}}, %[[OUT1]] : f32
   // CHECK:       spv.Store "StorageBuffer" {{%.*}}, %[[OUT2]] : f32
   // CHECK:       spv.Return
@@ -130,15 +130,15 @@ func.func @simple_if_yield_type_change(%arg2 : memref<10xf32, #spv.storage_class
   // CHECK:       spv.mlir.selection {
   // CHECK-NEXT:    spv.BranchConditional {{%.*}}, [[TRUE:\^.*]], [[FALSE:\^.*]]
   // CHECK-NEXT:  [[TRUE]]:
-  // CHECK:         spv.Store "Function" %[[VAR]], {{%.*}} : !spv.ptr<!spv.struct<(!spv.array<10 x f32, stride=4> [0])>, StorageBuffer>
+  // CHECK:         spv.Store <Function> %[[VAR]], {{%.*}} : !spv.ptr<!spv.struct<(!spv.array<10 x f32, stride=4> [0])>, StorageBuffer>
   // CHECK:         spv.Branch ^[[MERGE:.*]]
   // CHECK-NEXT:  [[FALSE]]:
-  // CHECK:         spv.Store "Function" %[[VAR]], {{%.*}} : !spv.ptr<!spv.struct<(!spv.array<10 x f32, stride=4> [0])>, StorageBuffer>
+  // CHECK:         spv.Store <Function> %[[VAR]], {{%.*}} : !spv.ptr<!spv.struct<(!spv.array<10 x f32, stride=4> [0])>, StorageBuffer>
   // CHECK:         spv.Branch ^[[MERGE]]
   // CHECK-NEXT:  ^[[MERGE]]:
   // CHECK:         spv.mlir.merge
   // CHECK-NEXT:  }
-  // CHECK:       %[[OUT:.*]] = spv.Load "Function" %[[VAR]] : !spv.ptr<!spv.struct<(!spv.array<10 x f32, stride=4> [0])>, StorageBuffer>
+  // CHECK:       %[[OUT:.*]] = spv.Load <Function> %[[VAR]] : !spv.ptr<!spv.struct<(!spv.array<10 x f32, stride=4> [0])>, StorageBuffer>
   // CHECK:       %[[ADD:.*]] = spv.AccessChain %[[OUT]][{{%.*}}, {{%.*}}] : !spv.ptr<!spv.struct<(!spv.array<10 x f32, stride=4> [0])>, StorageBuffer>
   // CHECK:       spv.Store "StorageBuffer" %[[ADD]], {{%.*}} : f32
   // CHECK:       spv.Return

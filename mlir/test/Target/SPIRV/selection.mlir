@@ -4,7 +4,7 @@
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // CHECK-LABEL: @selection
-  spv.func @selection(%cond: i1) -> () "None" {
+  spv.func @selection(%cond: i1) -> () <None> {
 // CHECK-NEXT:   spv.Constant 0
 // CHECK-NEXT:   spv.Variable
 // CHECK:        spv.Branch ^[[BB:.+]]
@@ -23,7 +23,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     ^then:
 // CHECK-NEXT:     spv.Constant 1
 // CHECK-NEXT:     spv.Store
-      spv.Store "Function" %var, %one : i32
+      spv.Store <Function> %var, %one : i32
 // CHECK-NEXT:     spv.Branch ^[[MERGE:.+]]
       spv.Branch ^merge
 
@@ -31,7 +31,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     ^else:
 // CHECK-NEXT:     spv.Constant 2
 // CHECK-NEXT:     spv.Store
-      spv.Store "Function" %var, %two : i32
+      spv.Store <Function> %var, %two : i32
 // CHECK-NEXT:     spv.Branch ^[[MERGE]]
       spv.Branch ^merge
 
@@ -44,10 +44,10 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.Return
   }
 
-  spv.func @main() -> () "None" {
+  spv.func @main() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @main
+  spv.EntryPoint <GLCompute> @main
   spv.ExecutionMode @main "LocalSize", 1, 1, 1
 }
 
@@ -59,7 +59,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // CHECK-LABEL: spv.func @selection
 //  CHECK-SAME: (%[[ARG:.*]]: i1)
-  spv.func @selection(%cond: i1) -> (i32) "None" {
+  spv.func @selection(%cond: i1) -> (i32) <None> {
 // CHECK:        spv.Branch ^[[BB:.+]]
 // CHECK-NEXT: ^[[BB]]:
 // CHECK-NEXT:   spv.mlir.selection
@@ -82,10 +82,10 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.ReturnValue  %one : i32
   }
 
-  spv.func @main() -> () "None" {
+  spv.func @main() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @main
+  spv.EntryPoint <GLCompute> @main
   spv.ExecutionMode @main "LocalSize", 1, 1, 1
 }
 
@@ -96,7 +96,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // CHECK-LABEL: @selection_cf()
-  spv.func @selection_cf() -> () "None" {
+  spv.func @selection_cf() -> () <None> {
     %true = spv.Constant true
     %false = spv.Constant false
     %zero = spv.Constant 0 : i32
@@ -112,17 +112,17 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
       spv.BranchConditional %true, ^then0, ^else0
 
 // CHECK-NEXT:    ^[[THEN0]]:
-//      CHECK:      spv.Store "Function" %[[VAR]]
+//      CHECK:      spv.Store <Function> %[[VAR]]
 // CHECK-NEXT:      spv.Branch ^[[MERGE:.+]]
     ^then0:
-      spv.Store "Function" %var, %true : i1
+      spv.Store <Function> %var, %true : i1
       spv.Branch ^merge
 
 // CHECK-NEXT:    ^[[ELSE0]]:
-//      CHECK:      spv.Store "Function" %[[VAR]]
+//      CHECK:      spv.Store <Function> %[[VAR]]
 // CHECK-NEXT:      spv.Branch ^[[MERGE]]
     ^else0:
-      spv.Store "Function" %var, %false : i1
+      spv.Store <Function> %var, %false : i1
       spv.Branch ^merge
 
 // CHECK-NEXT:    ^[[MERGE]]:
@@ -132,8 +132,8 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // CHECK-NEXT:    }
     }
 
-// CHECK-NEXT:    spv.Load "Function" %[[VAR]]
-    %cond = spv.Load "Function" %var : i1
+// CHECK-NEXT:    spv.Load <Function> %[[VAR]]
+    %cond = spv.Load <Function> %var : i1
 //      CHECK:    spv.BranchConditional %1, ^[[THEN1:.+]](%{{.+}} : i32), ^[[ELSE1:.+]](%{{.+}}, %{{.+}} : i32, i32)
     spv.BranchConditional %cond, ^then1(%one: i32), ^else1(%zero, %zero: i32, i32)
 

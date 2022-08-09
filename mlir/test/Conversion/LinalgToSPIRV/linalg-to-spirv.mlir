@@ -24,7 +24,7 @@ module attributes {
 // CHECK-SAME: (%[[INPUT:.+]]: !spv.ptr{{.+}}, %[[OUTPUT:.+]]: !spv.ptr{{.+}})
 
 // CHECK:        %[[ZERO:.+]] = spv.Constant 0 : i32
-// CHECK:        %[[ID:.+]] = spv.Load "Input" %{{.+}} : vector<3xi32>
+// CHECK:        %[[ID:.+]] = spv.Load <Input> %{{.+}} : vector<3xi32>
 // CHECK:        %[[X:.+]] = spv.CompositeExtract %[[ID]][0 : i32]
 
 // CHECK:        %[[INPTR:.+]] = spv.AccessChain %[[INPUT]][%[[ZERO]], %[[X]]]

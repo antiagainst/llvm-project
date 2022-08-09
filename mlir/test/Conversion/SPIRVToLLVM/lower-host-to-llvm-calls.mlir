@@ -9,7 +9,7 @@ module attributes {gpu.container_module, spv.target_env = #spv.target_env<#spv.v
   //       CHECK:   spv.GlobalVariable @bar_arg_0 bind(0, 0) : !spv.ptr<!spv.struct<(!spv.array<6 x i32, stride=4> [0])>, StorageBuffer>
   //       CHECK:   spv.func @__spv__foo_bar
 
-  //       CHECK:   spv.EntryPoint "GLCompute" @__spv__foo_bar
+  //       CHECK:   spv.EntryPoint <GLCompute> @__spv__foo_bar
   //       CHECK:   spv.ExecutionMode @__spv__foo_bar "LocalSize", 1, 1, 1
 
   // CHECK-LABEL: @main
@@ -23,11 +23,11 @@ module attributes {gpu.container_module, spv.target_env = #spv.target_env<#spv.v
 
   spv.module @__spv__foo Logical GLSL450 requires #spv.vce<v1.0, [Shader], [SPV_KHR_variable_pointers]> {
     spv.GlobalVariable @bar_arg_0 bind(0, 0) : !spv.ptr<!spv.struct<(!spv.array<6 x i32, stride=4> [0])>, StorageBuffer>
-    spv.func @bar() "None" attributes {workgroup_attributions = 0 : i64} {
+    spv.func @bar() <None> attributes {workgroup_attributions = 0 : i64} {
       %0 = spv.mlir.addressof @bar_arg_0 : !spv.ptr<!spv.struct<(!spv.array<6 x i32, stride=4> [0])>, StorageBuffer>
       spv.Return
     }
-    spv.EntryPoint "GLCompute" @bar
+    spv.EntryPoint <GLCompute> @bar
     spv.ExecutionMode @bar "LocalSize", 1, 1, 1
   }
 

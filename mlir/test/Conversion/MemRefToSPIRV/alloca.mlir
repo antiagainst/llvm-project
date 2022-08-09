@@ -12,9 +12,9 @@ module attributes {spv.target_env = #spv.target_env<#spv.vce<v1.3, [Shader], []>
 // CHECK-LABEL: func @alloc_function_variable
 //       CHECK:   %[[VAR:.+]] = spv.Variable : !spv.ptr<!spv.struct<(!spv.array<20 x f32>)>, Function>
 //       CHECK:   %[[LOADPTR:.+]] = spv.AccessChain %[[VAR]]
-//       CHECK:   %[[VAL:.+]] = spv.Load "Function" %[[LOADPTR]] : f32
+//       CHECK:   %[[VAL:.+]] = spv.Load <Function> %[[LOADPTR]] : f32
 //       CHECK:   %[[STOREPTR:.+]] = spv.AccessChain %[[VAR]]
-//       CHECK:   spv.Store "Function" %[[STOREPTR]], %[[VAL]] : f32
+//       CHECK:   spv.Store <Function> %[[STOREPTR]], %[[VAL]] : f32
 
 
 // -----

@@ -3,7 +3,7 @@
 // Test branch with one block argument
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
-  spv.func @foo() -> () "None" {
+  spv.func @foo() -> () <None> {
 // CHECK:        %[[CST:.*]] = spv.Constant 0
     %zero = spv.Constant 0 : i32
 // CHECK-NEXT:   spv.Branch ^bb1(%[[CST]] : i32)
@@ -13,10 +13,10 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
    spv.Return
   }
 
-  spv.func @main() -> () "None" {
+  spv.func @main() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @main
+  spv.EntryPoint <GLCompute> @main
 }
 
 // -----
@@ -24,7 +24,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // Test branch with multiple block arguments
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
-  spv.func @foo() -> () "None" {
+  spv.func @foo() -> () <None> {
 // CHECK:        %[[ZERO:.*]] = spv.Constant 0
     %zero = spv.Constant 0 : i32
 // CHECK-NEXT:   %[[ONE:.*]] = spv.Constant 1
@@ -37,10 +37,10 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
    spv.Return
   }
 
-  spv.func @main() -> () "None" {
+  spv.func @main() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @main
+  spv.EntryPoint <GLCompute> @main
 }
 
 // -----
@@ -48,7 +48,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // Test using block arguments within branch
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
-  spv.func @foo() -> () "None" {
+  spv.func @foo() -> () <None> {
 // CHECK:        %[[CST0:.*]] = spv.Constant 0
     %zero = spv.Constant 0 : i32
 // CHECK-NEXT:   spv.Branch ^bb1(%[[CST0]] : i32)
@@ -67,10 +67,10 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
    spv.Return
   }
 
-  spv.func @main() -> () "None" {
+  spv.func @main() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @main
+  spv.EntryPoint <GLCompute> @main
 }
 
 // -----
@@ -78,7 +78,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // Test block not following domination order
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
-  spv.func @foo() -> () "None" {
+  spv.func @foo() -> () <None> {
 // CHECK:        spv.Branch ^bb1
     spv.Branch ^bb1
 
@@ -99,10 +99,10 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.Branch ^bb2(%zero, %one : i32, f32)
   }
 
-  spv.func @main() -> () "None" {
+  spv.func @main() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @main
+  spv.EntryPoint <GLCompute> @main
 }
 
 // -----
@@ -110,7 +110,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // Test multiple predecessors
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
-  spv.func @foo() -> () "None" {
+  spv.func @foo() -> () <None> {
     %var = spv.Variable : !spv.ptr<i32, Function>
 
 // CHECK:      spv.mlir.selection
@@ -135,8 +135,8 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 
 // CHECK-NEXT: ^bb3(%[[ARG:.*]]: i32):
     ^phi(%arg: i32):
-// CHECK-NEXT:   spv.Store "Function" %{{.*}}, %[[ARG]] : i32
-      spv.Store "Function" %var, %arg : i32
+// CHECK-NEXT:   spv.Store <Function> %{{.*}}, %[[ARG]] : i32
+      spv.Store <Function> %var, %arg : i32
 // CHECK-NEXT:   spv.Return
       spv.Return
 
@@ -148,10 +148,10 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.Return
   }
 
-  spv.func @main() -> () "None" {
+  spv.func @main() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @main
+  spv.EntryPoint <GLCompute> @main
 }
 
 // -----
@@ -161,21 +161,21 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
   spv.GlobalVariable @__builtin_var_NumWorkgroups__ built_in("NumWorkgroups") : !spv.ptr<vector<3xi32>, Input>
   spv.GlobalVariable @__builtin_var_WorkgroupId__ built_in("WorkgroupId") : !spv.ptr<vector<3xi32>, Input>
-  spv.func @fmul_kernel() "None" {
+  spv.func @fmul_kernel() <None> {
     %3 = spv.Constant 12 : i32
     %4 = spv.Constant 32 : i32
     %5 = spv.Constant 4 : i32
     %6 = spv.mlir.addressof @__builtin_var_WorkgroupId__ : !spv.ptr<vector<3xi32>, Input>
-    %7 = spv.Load "Input" %6 : vector<3xi32>
+    %7 = spv.Load <Input> %6 : vector<3xi32>
     %8 = spv.CompositeExtract %7[0 : i32] : vector<3xi32>
     %9 = spv.mlir.addressof @__builtin_var_WorkgroupId__ : !spv.ptr<vector<3xi32>, Input>
-    %10 = spv.Load "Input" %9 : vector<3xi32>
+    %10 = spv.Load <Input> %9 : vector<3xi32>
     %11 = spv.CompositeExtract %10[1 : i32] : vector<3xi32>
     %18 = spv.mlir.addressof @__builtin_var_NumWorkgroups__ : !spv.ptr<vector<3xi32>, Input>
-    %19 = spv.Load "Input" %18 : vector<3xi32>
+    %19 = spv.Load <Input> %18 : vector<3xi32>
     %20 = spv.CompositeExtract %19[0 : i32] : vector<3xi32>
     %21 = spv.mlir.addressof @__builtin_var_NumWorkgroups__ : !spv.ptr<vector<3xi32>, Input>
-    %22 = spv.Load "Input" %21 : vector<3xi32>
+    %22 = spv.Load <Input> %21 : vector<3xi32>
     %23 = spv.CompositeExtract %22[1 : i32] : vector<3xi32>
     %30 = spv.IMul %11, %4 : i32
     %31 = spv.IMul %23, %4 : i32
@@ -233,7 +233,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.Return
   }
 
-  spv.EntryPoint "GLCompute" @fmul_kernel, @__builtin_var_WorkgroupId__, @__builtin_var_NumWorkgroups__
+  spv.EntryPoint <GLCompute> @fmul_kernel, @__builtin_var_WorkgroupId__, @__builtin_var_NumWorkgroups__
   spv.ExecutionMode @fmul_kernel "LocalSize", 32, 1, 1
 }
 
@@ -242,7 +242,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // Test back-to-back loops with block arguments
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
-  spv.func @fmul_kernel() "None" {
+  spv.func @fmul_kernel() <None> {
     %cst4 = spv.Constant 4 : i32
 
     %val1 = spv.Constant 43 : i32
@@ -283,7 +283,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.Return
   }
 
-  spv.EntryPoint "GLCompute" @fmul_kernel
+  spv.EntryPoint <GLCompute> @fmul_kernel
   spv.ExecutionMode @fmul_kernel "LocalSize", 32, 1, 1
 }
 
@@ -291,7 +291,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // CHECK-LABEL: @cond_branch_true_argument
-  spv.func @cond_branch_true_argument() -> () "None" {
+  spv.func @cond_branch_true_argument() -> () <None> {
     %true = spv.Constant true
     %zero = spv.Constant 0 : i32
     %one = spv.Constant 1 : i32
@@ -310,7 +310,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // CHECK-LABEL: @cond_branch_false_argument
-  spv.func @cond_branch_false_argument() -> () "None" {
+  spv.func @cond_branch_false_argument() -> () <None> {
     %true = spv.Constant true
     %zero = spv.Constant 0 : i32
     %one = spv.Constant 1 : i32
@@ -329,7 +329,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 // CHECK-LABEL: @cond_branch_true_and_false_argument
-  spv.func @cond_branch_true_and_false_argument() -> () "None" {
+  spv.func @cond_branch_true_and_false_argument() -> () <None> {
     %true = spv.Constant true
     %zero = spv.Constant 0 : i32
     %one = spv.Constant 1 : i32

@@ -3,10 +3,10 @@
 module {
 spv.module @Module1 Logical GLSL450 {
   spv.GlobalVariable @foo bind(1, 0) : !spv.ptr<f32, Input>
-  spv.func @bar() -> () "None" {
+  spv.func @bar() -> () <None> {
     spv.Return
   }
-  spv.func @baz() -> () "None" {
+  spv.func @baz() -> () <None> {
     spv.Return
   }
 
@@ -14,13 +14,13 @@ spv.module @Module1 Logical GLSL450 {
 }
 
 spv.module @Module2 Logical GLSL450 {
-  spv.func @foo() -> () "None" {
+  spv.func @foo() -> () <None> {
     spv.Return
   }
 
   spv.GlobalVariable @bar bind(1, 0) : !spv.ptr<f32, Input>
 
-  spv.func @baz() -> () "None" {
+  spv.func @baz() -> () <None> {
     spv.Return
   }
 
@@ -28,13 +28,13 @@ spv.module @Module2 Logical GLSL450 {
 }
 
 spv.module @Module3 Logical GLSL450 {
-  spv.func @foo() -> () "None" {
+  spv.func @foo() -> () <None> {
     spv.Return
   }
 
   spv.GlobalVariable @bar bind(1, 0) : !spv.ptr<f32, Input>
 
-  spv.func @baz() -> () "None" {
+  spv.func @baz() -> () <None> {
     spv.Return
   }
 

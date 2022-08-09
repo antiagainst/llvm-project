@@ -5,7 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: @bool_constant_scalar
-spv.func @bool_constant_scalar() "None" {
+spv.func @bool_constant_scalar() <None> {
   // CHECK: llvm.mlir.constant(true) : i1
   %0 = spv.Constant true
   // CHECK: llvm.mlir.constant(false) : i1
@@ -14,7 +14,7 @@ spv.func @bool_constant_scalar() "None" {
 }
 
 // CHECK-LABEL: @bool_constant_vector
-spv.func @bool_constant_vector() "None" {
+spv.func @bool_constant_vector() <None> {
   // CHECK: llvm.mlir.constant(dense<[true, false]> : vector<2xi1>) : vector<2xi1>
   %0 = spv.Constant dense<[true, false]> : vector<2xi1>
   // CHECK: llvm.mlir.constant(dense<false> : vector<3xi1>) : vector<3xi1>
@@ -23,7 +23,7 @@ spv.func @bool_constant_vector() "None" {
 }
 
 // CHECK-LABEL: @integer_constant_scalar
-spv.func @integer_constant_scalar() "None" {
+spv.func @integer_constant_scalar() <None> {
   // CHECK: llvm.mlir.constant(0 : i8) : i8
   %0 = spv.Constant  0 : i8
   // CHECK: llvm.mlir.constant(-5 : i64) : i64
@@ -34,7 +34,7 @@ spv.func @integer_constant_scalar() "None" {
 }
 
 // CHECK-LABEL: @integer_constant_vector
-spv.func @integer_constant_vector() "None" {
+spv.func @integer_constant_vector() <None> {
   // CHECK: llvm.mlir.constant(dense<[2, 3]> : vector<2xi32>) : vector<2xi32>
   %0 = spv.Constant dense<[2, 3]> : vector<2xi32>
   // CHECK: llvm.mlir.constant(dense<-4> : vector<2xi32>) : vector<2xi32>
@@ -45,7 +45,7 @@ spv.func @integer_constant_vector() "None" {
 }
 
 // CHECK-LABEL: @float_constant_scalar
-spv.func @float_constant_scalar() "None" {
+spv.func @float_constant_scalar() <None> {
   // CHECK: llvm.mlir.constant(5.000000e+00 : f16) : f16
   %0 = spv.Constant 5.000000e+00 : f16
   // CHECK: llvm.mlir.constant(5.000000e+00 : f64) : f64
@@ -54,7 +54,7 @@ spv.func @float_constant_scalar() "None" {
 }
 
 // CHECK-LABEL: @float_constant_vector
-spv.func @float_constant_vector() "None" {
+spv.func @float_constant_vector() <None> {
   // CHECK: llvm.mlir.constant(dense<[2.000000e+00, 3.000000e+00]> : vector<2xf32>) : vector<2xf32>
   %0 = spv.Constant dense<[2.000000e+00, 3.000000e+00]> : vector<2xf32>
   spv.Return

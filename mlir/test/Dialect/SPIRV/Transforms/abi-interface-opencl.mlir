@@ -10,7 +10,7 @@ module attributes {
     //       CHECK:   spv.ExecutionMode [[FN]] "LocalSize", 32, 1, 1
     spv.func @kernel(
       %arg0: f32,
-      %arg1: !spv.ptr<!spv.struct<(!spv.array<12 x f32>)>, CrossWorkgroup>) "None"
+      %arg1: !spv.ptr<!spv.struct<(!spv.array<12 x f32>)>, CrossWorkgroup>) <None>
     attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[32, 1, 1]> : vector<3xi32>>} {
       spv.Return
     }

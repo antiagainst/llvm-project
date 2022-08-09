@@ -38,10 +38,10 @@ module attributes {
     gpu.func @load_store_kernel(%arg0: memref<12x4xf32, #spv.storage_class<StorageBuffer>>, %arg1: memref<12x4xf32, #spv.storage_class<StorageBuffer>>, %arg2: memref<12x4xf32, #spv.storage_class<StorageBuffer>>, %arg3: index, %arg4: index, %arg5: index, %arg6: index) kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: %[[ADDRESSWORKGROUPID:.*]] = spv.mlir.addressof @[[$WORKGROUPIDVAR]]
-      // CHECK: %[[WORKGROUPID:.*]] = spv.Load "Input" %[[ADDRESSWORKGROUPID]]
+      // CHECK: %[[WORKGROUPID:.*]] = spv.Load <Input> %[[ADDRESSWORKGROUPID]]
       // CHECK: %[[WORKGROUPIDX:.*]] = spv.CompositeExtract %[[WORKGROUPID]]{{\[}}0 : i32{{\]}}
       // CHECK: %[[ADDRESSLOCALINVOCATIONID:.*]] = spv.mlir.addressof @[[$LOCALINVOCATIONIDVAR]]
-      // CHECK: %[[LOCALINVOCATIONID:.*]] = spv.Load "Input" %[[ADDRESSLOCALINVOCATIONID]]
+      // CHECK: %[[LOCALINVOCATIONID:.*]] = spv.Load <Input> %[[ADDRESSLOCALINVOCATIONID]]
       // CHECK: %[[LOCALINVOCATIONIDX:.*]] = spv.CompositeExtract %[[LOCALINVOCATIONID]]{{\[}}0 : i32{{\]}}
       %0 = gpu.block_id x
       %1 = gpu.block_id y

@@ -18,9 +18,9 @@ module attributes {
 // CHECK-NOT:   memref.alloc
 //     CHECK:   %[[PTR:.+]] = spv.mlir.addressof @[[VAR]]
 //     CHECK:   %[[LOADPTR:.+]] = spv.AccessChain %[[PTR]]
-//     CHECK:   %[[VAL:.+]] = spv.Load "Workgroup" %[[LOADPTR]] : f32
+//     CHECK:   %[[VAL:.+]] = spv.Load <Workgroup> %[[LOADPTR]] : f32
 //     CHECK:   %[[STOREPTR:.+]] = spv.AccessChain %[[PTR]]
-//     CHECK:   spv.Store "Workgroup" %[[STOREPTR]], %[[VAL]] : f32
+//     CHECK:   spv.Store <Workgroup> %[[STOREPTR]], %[[VAL]] : f32
 // CHECK-NOT:   memref.dealloc
 
 // -----
@@ -45,11 +45,11 @@ module attributes {
 //       CHECK:   %[[VAR:.+]] = spv.mlir.addressof @__workgroup_mem__0
 //       CHECK:   %[[LOC:.+]] = spv.SDiv
 //       CHECK:   %[[PTR:.+]] = spv.AccessChain %[[VAR]][%{{.+}}, %[[LOC]]]
-//       CHECK:   %{{.+}} = spv.Load "Workgroup" %[[PTR]] : i32
+//       CHECK:   %{{.+}} = spv.Load <Workgroup> %[[PTR]] : i32
 //       CHECK:   %[[LOC:.+]] = spv.SDiv
 //       CHECK:   %[[PTR:.+]] = spv.AccessChain %[[VAR]][%{{.+}}, %[[LOC]]]
-//       CHECK:   %{{.+}} = spv.AtomicAnd "Workgroup" "AcquireRelease" %[[PTR]], %{{.+}} : !spv.ptr<i32, Workgroup>
-//       CHECK:   %{{.+}} = spv.AtomicOr "Workgroup" "AcquireRelease" %[[PTR]], %{{.+}} : !spv.ptr<i32, Workgroup>
+//       CHECK:   %{{.+}} = spv.AtomicAnd <Workgroup> "AcquireRelease" %[[PTR]], %{{.+}} : !spv.ptr<i32, Workgroup>
+//       CHECK:   %{{.+}} = spv.AtomicOr <Workgroup> "AcquireRelease" %[[PTR]], %{{.+}} : !spv.ptr<i32, Workgroup>
 
 
 // -----

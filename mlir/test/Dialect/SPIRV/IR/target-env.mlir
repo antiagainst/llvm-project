@@ -37,7 +37,7 @@
 func.func @cmp_exchange_weak_suitable_version_capabilities(%ptr: !spv.ptr<i32, Workgroup>, %value: i32, %comparator: i32) -> i32 attributes {
   spv.target_env = #spv.target_env<#spv.vce<v1.1, [Kernel, AtomicStorage], []>, #spv.resource_limits<>>
 } {
-  // CHECK: spv.AtomicCompareExchangeWeak "Workgroup" "AcquireRelease|AtomicCounterMemory" "Acquire"
+  // CHECK: spv.AtomicCompareExchangeWeak <Workgroup> "AcquireRelease|AtomicCounterMemory" "Acquire"
   %0 = "test.convert_to_atomic_compare_exchange_weak_op"(%ptr, %value, %comparator): (!spv.ptr<i32, Workgroup>, i32, i32) -> (i32)
   return %0: i32
 }

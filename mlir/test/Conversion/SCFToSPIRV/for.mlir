@@ -64,8 +64,8 @@ func.func @loop_yield(%arg2 : memref<10xf32, #spv.storage_class<StorageBuffer>>,
   // CHECK: ^[[BODY]]:
   // CHECK:   %[[UPDATED:.*]] = spv.FAdd %[[CARRIED1]], %[[CARRIED1]] : f32
   // CHECK-DAG:   %[[INCREMENT:.*]] = spv.IAdd %[[INDVAR]], %[[STEP]] : i32
-  // CHECK-DAG:   spv.Store "Function" %[[VAR1]], %[[UPDATED]] : f32
-  // CHECK-DAG:   spv.Store "Function" %[[VAR2]], %[[UPDATED]] : f32
+  // CHECK-DAG:   spv.Store <Function> %[[VAR1]], %[[UPDATED]] : f32
+  // CHECK-DAG:   spv.Store <Function> %[[VAR2]], %[[UPDATED]] : f32
   // CHECK: spv.Branch ^[[HEADER]](%[[INCREMENT]], %[[UPDATED]], %[[UPDATED]] : i32, f32, f32)
   // CHECK: ^[[MERGE]]:
   // CHECK:   spv.mlir.merge
@@ -74,8 +74,8 @@ func.func @loop_yield(%arg2 : memref<10xf32, #spv.storage_class<StorageBuffer>>,
     %sn = arith.addf %si, %si : f32
     scf.yield %sn, %sn : f32, f32
   }
-  // CHECK-DAG: %[[OUT1:.*]] = spv.Load "Function" %[[VAR1]] : f32
-  // CHECK-DAG: %[[OUT2:.*]] = spv.Load "Function" %[[VAR2]] : f32
+  // CHECK-DAG: %[[OUT1:.*]] = spv.Load <Function> %[[VAR1]] : f32
+  // CHECK-DAG: %[[OUT2:.*]] = spv.Load <Function> %[[VAR2]] : f32
   // CHECK: spv.Store "StorageBuffer" {{%.*}}, %[[OUT1]] : f32
   // CHECK: spv.Store "StorageBuffer" {{%.*}}, %[[OUT2]] : f32
   memref.store %result#0, %arg3[%lb] : memref<10xf32, #spv.storage_class<StorageBuffer>>

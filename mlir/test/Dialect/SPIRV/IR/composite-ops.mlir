@@ -140,7 +140,7 @@ func.func @composite_extract_no_ssa_operand() -> () {
 func.func @composite_extract_invalid_index_type_1() -> () {
   %0 = spv.Constant 10 : i32
   %1 = spv.Variable : !spv.ptr<!spv.array<4x!spv.array<4xf32>>, Function>
-  %2 = spv.Load "Function" %1 ["Volatile"] : !spv.array<4x!spv.array<4xf32>>
+  %2 = spv.Load <Function> %1 ["Volatile"] : !spv.array<4x!spv.array<4xf32>>
   // expected-error @+1 {{expected attribute value}}
   %3 = spv.CompositeExtract %2[%0] : !spv.array<4x!spv.array<4xf32>>
   return

@@ -363,7 +363,7 @@ IntLoadOpPattern::matchAndRewrite(memref::LoadOp loadOp, OpAdaptor adaptor,
   Value spvLoadOp = rewriter.create<spirv::LoadOp>(
       loc, dstType, adjustedPtr,
       loadOp->getAttrOfType<spirv::MemoryAccessAttr>(
-          spirv::attributeName<spirv::MemoryAccess>()),
+          spirv::MemoryAccessAttr::getMnemonic()),
       loadOp->getAttrOfType<IntegerAttr>("alignment"));
 
   // Shift the bits to the rightmost.

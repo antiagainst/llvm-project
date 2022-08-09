@@ -16,7 +16,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
   spv.SpecConstantComposite @scc (@sc_int, @sc_int) : !spv.array<2 x i32>
 
   // CHECK-LABEL: @use
-  spv.func @use() -> (i32) "None" {
+  spv.func @use() -> (i32) <None> {
     // We materialize a `spv.mlir.referenceof` op at every use of a
     // specialization constant in the deserializer. So two ops here.
     // CHECK: %[[USE1:.*]] = spv.mlir.referenceof @sc_int : i32
@@ -29,7 +29,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
   }
 
   // CHECK-LABEL: @use
-  spv.func @use_composite() -> (i32) "None" {
+  spv.func @use_composite() -> (i32) <None> {
     // We materialize a `spv.mlir.referenceof` op at every use of a
     // specialization constant in the deserializer. So two ops here.
     // CHECK: %[[USE1:.*]] = spv.mlir.referenceof @scc : !spv.array<2 x i32>
@@ -92,7 +92,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 
   spv.SpecConstant @sc_i32_1 = 1 : i32
 
-  spv.func @use_composite() -> (i32) "None" {
+  spv.func @use_composite() -> (i32) <None> {
     // CHECK: [[USE1:%.*]] = spv.mlir.referenceof @sc_i32_1 : i32
     // CHECK: [[USE2:%.*]] = spv.Constant 0 : i32
 

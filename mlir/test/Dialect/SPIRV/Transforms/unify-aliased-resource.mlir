@@ -4,7 +4,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01v bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
 
-  spv.func @load_store_scalar(%index: i32) -> f32 "None" {
+  spv.func @load_store_scalar(%index: i32) -> f32 <None> {
     %c0 = spv.Constant 0 : i32
     %addr = spv.mlir.addressof @var01s : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
     %ac = spv.AccessChain %addr[%c0, %index] : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>, i32, i32
@@ -36,7 +36,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01v bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
 
-  spv.func @multiple_uses(%i0: i32, %i1: i32) -> f32 "None" {
+  spv.func @multiple_uses(%i0: i32, %i1: i32) -> f32 <None> {
     %c0 = spv.Constant 0 : i32
     %addr = spv.mlir.addressof @var01s : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
     %ac0 = spv.AccessChain %addr[%c0, %i0] : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>, i32, i32
@@ -65,7 +65,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01v bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<3xf32>, stride=16> [0])>, StorageBuffer>
 
-  spv.func @vector3(%index: i32) -> f32 "None" {
+  spv.func @vector3(%index: i32) -> f32 <None> {
     %c0 = spv.Constant 0 : i32
     %addr = spv.mlir.addressof @var01s : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
     %ac = spv.AccessChain %addr[%c0, %index] : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>, i32, i32
@@ -86,7 +86,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01v bind(1, 0) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
 
-  spv.func @not_aliased(%index: i32) -> f32 "None" {
+  spv.func @not_aliased(%index: i32) -> f32 <None> {
     %c0 = spv.Constant 0 : i32
     %addr = spv.mlir.addressof @var01s : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
     %ac = spv.AccessChain %addr[%c0, %index] : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>, i32, i32
@@ -110,7 +110,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01v bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
   spv.GlobalVariable @var01v_1 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
 
-  spv.func @multiple_aliases(%index: i32) -> f32 "None" {
+  spv.func @multiple_aliases(%index: i32) -> f32 <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr0 = spv.mlir.addressof @var01s : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
@@ -151,7 +151,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s_i32 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<i32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01s_f32 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
 
-  spv.func @different_scalar_type(%index: i32, %val1: f32) -> i32 "None" {
+  spv.func @different_scalar_type(%index: i32, %val1: f32) -> i32 <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr0 = spv.mlir.addressof @var01s_i32 : !spv.ptr<!spv.struct<(!spv.rtarray<i32, stride=4> [0])>, StorageBuffer>
@@ -189,7 +189,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<i32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01v bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
 
-  spv.func @different_primitive_type(%index: i32, %val0: i32) -> i32 "None" {
+  spv.func @different_primitive_type(%index: i32, %val0: i32) -> i32 <None> {
     %c0 = spv.Constant 0 : i32
     %addr = spv.mlir.addressof @var01s : !spv.ptr<!spv.struct<(!spv.rtarray<i32, stride=4> [0])>, StorageBuffer>
     %ac = spv.AccessChain %addr[%c0, %index] : !spv.ptr<!spv.struct<(!spv.rtarray<i32, stride=4> [0])>, StorageBuffer>, i32, i32
@@ -220,7 +220,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s_i64 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<i64, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01s_f32 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
 
-  spv.func @load_different_scalar_bitwidth(%index: i32) -> i64 "None" {
+  spv.func @load_different_scalar_bitwidth(%index: i32) -> i64 <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr0 = spv.mlir.addressof @var01s_i64 : !spv.ptr<!spv.struct<(!spv.rtarray<i64, stride=4> [0])>, StorageBuffer>
@@ -261,7 +261,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01s_i64 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<i64, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01s_f32 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
 
-  spv.func @store_different_scalar_bitwidth(%i0: i32, %i1: i32) "None" {
+  spv.func @store_different_scalar_bitwidth(%i0: i32, %i1: i32) <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr0 = spv.mlir.addressof @var01s_f32 : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
@@ -286,7 +286,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01_vec2 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<2xf32>, stride=8> [0])>, StorageBuffer>
   spv.GlobalVariable @var01_vec4 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
 
-  spv.func @load_different_vector_sizes(%i0: i32) -> vector<4xf32> "None" {
+  spv.func @load_different_vector_sizes(%i0: i32) -> vector<4xf32> <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr0 = spv.mlir.addressof @var01_vec4 : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
@@ -337,7 +337,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01_f32 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<f32, stride=4> [0])>, StorageBuffer>
   spv.GlobalVariable @var01_i64 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<i64, stride=8> [0])>, StorageBuffer>
 
-  spv.func @load_mixed_scalar_vector_primitive_types(%i0: i32) -> vector<4xf32> "None" {
+  spv.func @load_mixed_scalar_vector_primitive_types(%i0: i32) -> vector<4xf32> <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr0 = spv.mlir.addressof @var01_v4f32 : !spv.ptr<!spv.struct<(!spv.rtarray<vector<4xf32>, stride=16> [0])>, StorageBuffer>
@@ -402,7 +402,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01_v2f2 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<2xf32>, stride=16> [0])>, StorageBuffer>
   spv.GlobalVariable @var01_i64 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<i64, stride=8> [0])>, StorageBuffer>
 
-  spv.func @load_mixed_scalar_vector_primitive_types(%i0: i32) -> i64 "None" {
+  spv.func @load_mixed_scalar_vector_primitive_types(%i0: i32) -> i64 <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr = spv.mlir.addressof @var01_i64 : !spv.ptr<!spv.struct<(!spv.rtarray<i64, stride=8> [0])>, StorageBuffer>
@@ -431,7 +431,7 @@ spv.module Logical GLSL450 {
   spv.GlobalVariable @var01_v2f2 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<vector<2xf32>, stride=16> [0])>, StorageBuffer>
   spv.GlobalVariable @var01_i16 bind(0, 1) {aliased} : !spv.ptr<!spv.struct<(!spv.rtarray<i16, stride=2> [0])>, StorageBuffer>
 
-  spv.func @scalar_type_bitwidth_smaller_than_vector(%i0: i32) -> i16 "None" {
+  spv.func @scalar_type_bitwidth_smaller_than_vector(%i0: i32) -> i16 <None> {
     %c0 = spv.Constant 0 : i32
 
     %addr = spv.mlir.addressof @var01_i16 : !spv.ptr<!spv.struct<(!spv.rtarray<i16, stride=2> [0])>, StorageBuffer>

@@ -1,7 +1,7 @@
 // RUN: mlir-translate -test-spirv-roundtrip %s | FileCheck %s
 
 spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
-  spv.func @math(%arg0 : f32, %arg1 : f32, %arg2 : i32) "None" {
+  spv.func @math(%arg0 : f32, %arg1 : f32, %arg2 : i32) <None> {
     // CHECK: {{%.*}} = spv.GL.Exp {{%.*}} : f32
     %0 = spv.GL.Exp %arg0 : f32
     // CHECK: {{%.*}} = spv.GL.Sqrt {{%.*}} : f32
@@ -35,7 +35,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.Return
   }
 
-  spv.func @maxmin(%arg0 : f32, %arg1 : f32, %arg2 : i32, %arg3 : i32) "None" {
+  spv.func @maxmin(%arg0 : f32, %arg1 : f32, %arg2 : i32, %arg3 : i32) <None> {
     // CHECK: {{%.*}} = spv.GL.FMax {{%.*}}, {{%.*}} : f32
     %1 = spv.GL.FMax %arg0, %arg1 : f32
     // CHECK: {{%.*}} = spv.GL.SMax {{%.*}}, {{%.*}} : i32
@@ -52,31 +52,31 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
     spv.Return
   }
 
-  spv.func @fclamp(%arg0 : f32, %arg1 : f32, %arg2 : f32) "None" {
+  spv.func @fclamp(%arg0 : f32, %arg1 : f32, %arg2 : f32) <None> {
     // CHECK: spv.GL.FClamp {{%[^,]*}}, {{%[^,]*}}, {{%[^,]*}} : f32
     %13 = spv.GL.FClamp %arg0, %arg1, %arg2 : f32
     spv.Return
   }
 
-  spv.func @uclamp(%arg0 : ui32, %arg1 : ui32, %arg2 : ui32) "None" {
+  spv.func @uclamp(%arg0 : ui32, %arg1 : ui32, %arg2 : ui32) <None> {
     // CHECK: spv.GL.UClamp {{%[^,]*}}, {{%[^,]*}}, {{%[^,]*}} : i32
     %13 = spv.GL.UClamp %arg0, %arg1, %arg2 : ui32
     spv.Return
   }
 
-  spv.func @sclamp(%arg0 : si32, %arg1 : si32, %arg2 : si32) "None" {
+  spv.func @sclamp(%arg0 : si32, %arg1 : si32, %arg2 : si32) <None> {
     // CHECK: spv.GL.SClamp {{%[^,]*}}, {{%[^,]*}}, {{%[^,]*}} : si32
     %13 = spv.GL.SClamp %arg0, %arg1, %arg2 : si32
     spv.Return
   }
 
-  spv.func @fma(%arg0 : f32, %arg1 : f32, %arg2 : f32) "None" {
+  spv.func @fma(%arg0 : f32, %arg1 : f32, %arg2 : f32) <None> {
     // CHECK: spv.GL.Fma {{%[^,]*}}, {{%[^,]*}}, {{%[^,]*}} : f32
     %13 = spv.GL.Fma %arg0, %arg1, %arg2 : f32
     spv.Return
   }
 
-  spv.func @findumsb(%arg0 : i32) "None" {
+  spv.func @findumsb(%arg0 : i32) <None> {
     // CHECK: spv.GL.FindUMsb {{%.*}} : i32
     %2 = spv.GL.FindUMsb %arg0 : i32
     spv.Return

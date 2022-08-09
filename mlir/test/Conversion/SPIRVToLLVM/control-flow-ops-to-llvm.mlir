@@ -5,7 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 spv.module Logical GLSL450 {
-  spv.func @branch_without_arguments() -> () "None" {
+  spv.func @branch_without_arguments() -> () <None> {
 	  // CHECK: llvm.br ^bb1
     spv.Branch ^label
   // CHECK: ^bb1
@@ -13,7 +13,7 @@ spv.module Logical GLSL450 {
     spv.Return
   }
 
-  spv.func @branch_with_arguments() -> () "None" {
+  spv.func @branch_with_arguments() -> () <None> {
     %0 = spv.Constant 0 : i32
     %1 = spv.Constant true
     // CHECK: llvm.br ^bb1(%{{.*}}, %{{.*}} : i32, i1)
@@ -31,7 +31,7 @@ spv.module Logical GLSL450 {
 //===----------------------------------------------------------------------===//
 
 spv.module Logical GLSL450 {
-  spv.func @cond_branch_without_arguments() -> () "None" {
+  spv.func @cond_branch_without_arguments() -> () <None> {
     // CHECK: %[[COND:.*]] = llvm.mlir.constant(true) : i1
     %cond = spv.Constant true
     // CHECK: lvm.cond_br %[[COND]], ^bb1, ^bb2
@@ -44,7 +44,7 @@ spv.module Logical GLSL450 {
     spv.Return
   }
 
-  spv.func @cond_branch_with_arguments_nested() -> () "None" {
+  spv.func @cond_branch_with_arguments_nested() -> () <None> {
     // CHECK: %[[COND1:.*]] = llvm.mlir.constant(true) : i1
     %cond = spv.Constant true
     %0 = spv.Constant 0 : i32
@@ -67,7 +67,7 @@ spv.module Logical GLSL450 {
     spv.Return
   }
 
-  spv.func @cond_branch_with_weights(%cond: i1) -> () "None" {
+  spv.func @cond_branch_with_weights(%cond: i1) -> () <None> {
     // CHECK: llvm.cond_br %{{.*}} weights(dense<[1, 2]> : vector<2xi32>), ^bb1, ^bb2
     spv.BranchConditional %cond [1, 2], ^true, ^false
   // CHECK: ^bb1:
@@ -87,7 +87,7 @@ spv.module Logical GLSL450 {
 
 spv.module Logical GLSL450 {
   // CHECK-LABEL: @infinite_loop
-  spv.func @infinite_loop(%count : i32) -> () "None" {
+  spv.func @infinite_loop(%count : i32) -> () <None> {
     // CHECK:   llvm.br ^[[BB1:.*]]
     // CHECK: ^[[BB1]]:
     // CHECK:   %[[COND:.*]] = llvm.mlir.constant(true) : i1
@@ -125,14 +125,14 @@ spv.module Logical GLSL450 {
 //===----------------------------------------------------------------------===//
 
 spv.module Logical GLSL450 {
-  spv.func @selection_empty() -> () "None" {
+  spv.func @selection_empty() -> () <None> {
     // CHECK: llvm.return
     spv.mlir.selection {
     }
     spv.Return
   }
 
-  spv.func @selection_with_merge_block_only() -> () "None" {
+  spv.func @selection_with_merge_block_only() -> () <None> {
     %cond = spv.Constant true
     // CHECK: llvm.return
     spv.mlir.selection {
@@ -143,7 +143,7 @@ spv.module Logical GLSL450 {
     spv.Return
   }
 
-  spv.func @selection_with_true_block_only() -> () "None" {
+  spv.func @selection_with_true_block_only() -> () <None> {
     // CHECK: %[[COND:.*]] = llvm.mlir.constant(true) : i1
     %cond = spv.Constant true
     // CHECK: llvm.cond_br %[[COND]], ^bb1, ^bb2
@@ -163,7 +163,7 @@ spv.module Logical GLSL450 {
     spv.Return
   }
 
-  spv.func @selection_with_both_true_and_false_block() -> () "None" {
+  spv.func @selection_with_both_true_and_false_block() -> () <None> {
     // CHECK: %[[COND:.*]] = llvm.mlir.constant(true) : i1
     %cond = spv.Constant true
     // CHECK: llvm.cond_br %[[COND]], ^bb1, ^bb2
@@ -187,7 +187,7 @@ spv.module Logical GLSL450 {
     spv.Return
   }
 
-  spv.func @selection_with_early_return(%arg0: i1) -> i32 "None" {
+  spv.func @selection_with_early_return(%arg0: i1) -> i32 <None> {
     // CHECK: %[[ZERO:.*]] = llvm.mlir.constant(0 : i32) : i32
     %0 = spv.Constant 0 : i32
     // CHECK: llvm.cond_br %{{.*}}, ^bb1(%[[ZERO]] : i32), ^bb2

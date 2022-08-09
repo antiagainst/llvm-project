@@ -5,8 +5,8 @@
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_and(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicAnd "Device" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicAnd "Device" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicAnd "Device" <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicAnd "Device" <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -42,8 +42,8 @@ func.func @atomic_and(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_compare_exchange(%ptr: !spv.ptr<i32, Workgroup>, %value: i32, %comparator: i32) -> i32 {
-  // CHECK: spv.AtomicCompareExchange "Workgroup" "Release" "Acquire" %{{.*}}, %{{.*}}, %{{.*}} : !spv.ptr<i32, Workgroup>
-  %0 = spv.AtomicCompareExchange "Workgroup" "Release" "Acquire" %ptr, %value, %comparator: !spv.ptr<i32, Workgroup>
+  // CHECK: spv.AtomicCompareExchange <Workgroup> "Release" "Acquire" %{{.*}}, %{{.*}}, %{{.*}} : !spv.ptr<i32, Workgroup>
+  %0 = spv.AtomicCompareExchange <Workgroup> "Release" "Acquire" %ptr, %value, %comparator: !spv.ptr<i32, Workgroup>
   return %0: i32
 }
 
@@ -78,8 +78,8 @@ func.func @atomic_compare_exchange(%ptr: !spv.ptr<i64, Workgroup>, %value: i32, 
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_compare_exchange_weak(%ptr: !spv.ptr<i32, Workgroup>, %value: i32, %comparator: i32) -> i32 {
-  // CHECK: spv.AtomicCompareExchangeWeak "Workgroup" "Release" "Acquire" %{{.*}}, %{{.*}}, %{{.*}} : !spv.ptr<i32, Workgroup>
-  %0 = spv.AtomicCompareExchangeWeak "Workgroup" "Release" "Acquire" %ptr, %value, %comparator: !spv.ptr<i32, Workgroup>
+  // CHECK: spv.AtomicCompareExchangeWeak <Workgroup> "Release" "Acquire" %{{.*}}, %{{.*}}, %{{.*}} : !spv.ptr<i32, Workgroup>
+  %0 = spv.AtomicCompareExchangeWeak <Workgroup> "Release" "Acquire" %ptr, %value, %comparator: !spv.ptr<i32, Workgroup>
   return %0: i32
 }
 
@@ -114,8 +114,8 @@ func.func @atomic_compare_exchange_weak(%ptr: !spv.ptr<i64, Workgroup>, %value: 
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_exchange(%ptr: !spv.ptr<i32, Workgroup>, %value: i32) -> i32 {
-  // CHECK: spv.AtomicExchange "Workgroup" "Release" %{{.*}}, %{{.*}} : !spv.ptr<i32, Workgroup>
-  %0 = spv.AtomicExchange "Workgroup" "Release" %ptr, %value: !spv.ptr<i32, Workgroup>
+  // CHECK: spv.AtomicExchange <Workgroup> "Release" %{{.*}}, %{{.*}} : !spv.ptr<i32, Workgroup>
+  %0 = spv.AtomicExchange <Workgroup> "Release" %ptr, %value: !spv.ptr<i32, Workgroup>
   return %0: i32
 }
 
@@ -142,8 +142,8 @@ func.func @atomic_exchange(%ptr: !spv.ptr<i64, Workgroup>, %value: i32) -> i32 {
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_iadd(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicIAdd "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicIAdd "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicIAdd <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicIAdd <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -152,8 +152,8 @@ func.func @atomic_iadd(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_idecrement(%ptr : !spv.ptr<i32, StorageBuffer>) -> i32 {
-  // CHECK: spv.AtomicIDecrement "Workgroup" "None" %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicIDecrement "Workgroup" "None" %ptr : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicIDecrement <Workgroup> <None> %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicIDecrement <Workgroup> <None> %ptr : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -162,8 +162,8 @@ func.func @atomic_idecrement(%ptr : !spv.ptr<i32, StorageBuffer>) -> i32 {
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_iincrement(%ptr : !spv.ptr<i32, StorageBuffer>) -> i32 {
-  // CHECK: spv.AtomicIIncrement "Workgroup" "None" %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicIIncrement "Workgroup" "None" %ptr : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicIIncrement <Workgroup> <None> %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicIIncrement <Workgroup> <None> %ptr : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -172,8 +172,8 @@ func.func @atomic_iincrement(%ptr : !spv.ptr<i32, StorageBuffer>) -> i32 {
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_isub(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicISub "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicISub "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicISub <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicISub <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -182,8 +182,8 @@ func.func @atomic_isub(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_or(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicOr "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicOr "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicOr <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicOr <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -192,8 +192,8 @@ func.func @atomic_or(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_smax(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicSMax "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicSMax "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicSMax <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicSMax <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -202,8 +202,8 @@ func.func @atomic_smax(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_smin(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicSMin "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicSMin "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicSMin <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicSMin <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -212,8 +212,8 @@ func.func @atomic_smin(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_umax(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicUMax "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicUMax "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicUMax <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicUMax <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -222,8 +222,8 @@ func.func @atomic_umax(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_umin(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicUMin "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicUMin "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicUMin <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicUMin <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -232,8 +232,8 @@ func.func @atomic_umin(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_xor(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 {
-  // CHECK: spv.AtomicXor "Workgroup" "None" %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
-  %0 = spv.AtomicXor "Workgroup" "None" %ptr, %value : !spv.ptr<i32, StorageBuffer>
+  // CHECK: spv.AtomicXor <Workgroup> <None> %{{.*}}, %{{.*}} : !spv.ptr<i32, StorageBuffer>
+  %0 = spv.AtomicXor <Workgroup> <None> %ptr, %value : !spv.ptr<i32, StorageBuffer>
   return %0 : i32
 }
 
@@ -244,8 +244,8 @@ func.func @atomic_xor(%ptr : !spv.ptr<i32, StorageBuffer>, %value : i32) -> i32 
 //===----------------------------------------------------------------------===//
 
 func.func @atomic_fadd(%ptr : !spv.ptr<f32, StorageBuffer>, %value : f32) -> f32 {
-  // CHECK: spv.AtomicFAddEXT "Device" "None" %{{.*}}, %{{.*}} : !spv.ptr<f32, StorageBuffer>
-  %0 = spv.AtomicFAddEXT "Device" "None" %ptr, %value : !spv.ptr<f32, StorageBuffer>
+  // CHECK: spv.AtomicFAddEXT "Device" <None> %{{.*}}, %{{.*}} : !spv.ptr<f32, StorageBuffer>
+  %0 = spv.AtomicFAddEXT "Device" <None> %ptr, %value : !spv.ptr<f32, StorageBuffer>
   return %0 : f32
 }
 

@@ -14,7 +14,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_workgroup_id_x() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[WORKGROUPID]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}0 : i32{{\]}}
       %0 = gpu.block_id x
       gpu.return
@@ -40,7 +40,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_workgroup_id_y() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[WORKGROUPID]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}1 : i32{{\]}}
       %0 = gpu.block_id y
       gpu.return
@@ -64,7 +64,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_workgroup_id_z() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[WORKGROUPID]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}2 : i32{{\]}}
       %0 = gpu.block_id z
       gpu.return
@@ -157,7 +157,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_local_id_x() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[LOCALINVOCATIONID]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}0 : i32{{\]}}
       %0 = gpu.thread_id x
       gpu.return
@@ -181,7 +181,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_num_workgroups_x() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[NUMWORKGROUPS]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}0 : i32{{\]}}
       %0 = gpu.grid_dim x
       gpu.return
@@ -198,7 +198,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_subgroup_id() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[SUBGROUPID]]
-      // CHECK-NEXT: {{%.*}} = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: {{%.*}} = spv.Load <Input> [[ADDRESS]]
       %0 = gpu.subgroup_id : index
       gpu.return
     }
@@ -214,7 +214,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_num_subgroups() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[NUMSUBGROUPS]]
-      // CHECK-NEXT: {{%.*}} = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: {{%.*}} = spv.Load <Input> [[ADDRESS]]
       %0 = gpu.num_subgroups : index
       gpu.return
     }
@@ -237,7 +237,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_workgroup_size_x() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[WORKGROUPSIZE]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}0 : i32{{\]}}
       %0 = gpu.block_dim x
       gpu.return
@@ -261,7 +261,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_workgroup_size_y() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[WORKGROUPSIZE]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}1 : i32{{\]}}
       %0 = gpu.block_dim y
       gpu.return
@@ -285,7 +285,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_workgroup_size_z() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[WORKGROUPSIZE]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}2 : i32{{\]}}
       %0 = gpu.block_dim z
       gpu.return
@@ -309,7 +309,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_global_id_x() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[GLOBALINVOCATIONID]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}0 : i32{{\]}}
       %0 = gpu.global_id x
       gpu.return
@@ -333,7 +333,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_global_id_y() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[GLOBALINVOCATIONID]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}1 : i32{{\]}}
       %0 = gpu.global_id y
       gpu.return
@@ -357,7 +357,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_global_id_z() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[GLOBALINVOCATIONID]]
-      // CHECK-NEXT: [[VEC:%.*]] = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: [[VEC:%.*]] = spv.Load <Input> [[ADDRESS]]
       // CHECK-NEXT: {{%.*}} = spv.CompositeExtract [[VEC]]{{\[}}2 : i32{{\]}}
       %0 = gpu.global_id z
       gpu.return
@@ -375,7 +375,7 @@ module attributes {gpu.container_module} {
     gpu.func @builtin_subgroup_size() kernel
       attributes {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[16, 1, 1]>: vector<3xi32>>} {
       // CHECK: [[ADDRESS:%.*]] = spv.mlir.addressof [[SUBGROUPSIZE]]
-      // CHECK-NEXT: {{%.*}} = spv.Load "Input" [[ADDRESS]]
+      // CHECK-NEXT: {{%.*}} = spv.Load <Input> [[ADDRESS]]
       %0 = gpu.subgroup_size : index
       gpu.return
     }

@@ -21,7 +21,7 @@ func.func @tensor_extract_constant(%a : index, %b: index, %c: index) -> i32 {
   // CHECK: %[[MUL2:.+]] = spv.IMul %[[C1]], %[[C]] : i32
   // CHECK: %[[ADD2:.+]] = spv.IAdd %[[ADD1]], %[[MUL2]] : i32
   // CHECK: %[[AC:.+]] = spv.AccessChain %[[VAR]][%[[ADD2]]]
-  // CHECK: %[[VAL:.+]] = spv.Load "Function" %[[AC]] : i32
+  // CHECK: %[[VAL:.+]] = spv.Load <Function> %[[AC]] : i32
   %extract = tensor.extract %cst[%a, %b, %c] : tensor<2x2x3xi32>
   // CHECK: spv.ReturnValue %[[VAL]]
   return %extract : i32

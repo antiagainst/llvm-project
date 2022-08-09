@@ -5,7 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: @return
-spv.func @return() "None" {
+spv.func @return() <None> {
   // CHECK: llvm.return
   spv.Return
 }
@@ -15,7 +15,7 @@ spv.func @return() "None" {
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: @return_value
-spv.func @return_value(%arg: i32) -> i32 "None" {
+spv.func @return_value(%arg: i32) -> i32 <None> {
   // CHECK: llvm.return %{{.*}} : i32
   spv.ReturnValue %arg : i32
 }
@@ -25,7 +25,7 @@ spv.func @return_value(%arg: i32) -> i32 "None" {
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: llvm.func @none()
-spv.func @none() "None" {
+spv.func @none() <None> {
   spv.Return
 }
 
@@ -50,12 +50,12 @@ spv.func @const() "Const" {
 }
 
 // CHECK-LABEL: llvm.func @scalar_types(%arg0: i32, %arg1: i1, %arg2: f64, %arg3: f32)
-spv.func @scalar_types(%arg0: i32, %arg1: i1, %arg2: f64, %arg3: f32) "None" {
+spv.func @scalar_types(%arg0: i32, %arg1: i1, %arg2: f64, %arg3: f32) <None> {
   spv.Return
 }
 
 // CHECK-LABEL: llvm.func @vector_types(%arg0: vector<2xi64>, %arg1: vector<2xi64>) -> vector<2xi64>
-spv.func @vector_types(%arg0: vector<2xi64>, %arg1: vector<2xi64>) -> vector<2xi64> "None" {
+spv.func @vector_types(%arg0: vector<2xi64>, %arg1: vector<2xi64>) -> vector<2xi64> <None> {
   %0 = spv.IAdd %arg0, %arg1 : vector<2xi64>
   spv.ReturnValue %0 : vector<2xi64>
 }
@@ -66,7 +66,7 @@ spv.func @vector_types(%arg0: vector<2xi64>, %arg1: vector<2xi64>) -> vector<2xi
 
 // CHECK-LABEL: llvm.func @function_calls
 // CHECK-SAME: %[[ARG0:.*]]: i32, %[[ARG1:.*]]: i1, %[[ARG2:.*]]: f64, %[[ARG3:.*]]: vector<2xi64>, %[[ARG4:.*]]: vector<2xf32>
-spv.func @function_calls(%arg0: i32, %arg1: i1, %arg2: f64, %arg3: vector<2xi64>, %arg4: vector<2xf32>) "None" {
+spv.func @function_calls(%arg0: i32, %arg1: i1, %arg2: f64, %arg3: vector<2xi64>, %arg4: vector<2xf32>) <None> {
   // CHECK: llvm.call @void_1() : () -> ()
   // CHECK: llvm.call @void_2(%[[ARG3]]) : (vector<2xi64>) -> ()
   // CHECK: llvm.call @value_scalar(%[[ARG0]], %[[ARG1]], %[[ARG2]]) : (i32, i1, f64) -> i32
@@ -78,18 +78,18 @@ spv.func @function_calls(%arg0: i32, %arg1: i1, %arg2: f64, %arg3: vector<2xi64>
   spv.Return
 }
 
-spv.func @void_1() "None" {
+spv.func @void_1() <None> {
   spv.Return
 }
 
-spv.func @void_2(%arg0: vector<2xi64>) "None" {
+spv.func @void_2(%arg0: vector<2xi64>) <None> {
   spv.Return
 }
 
-spv.func @value_scalar(%arg0: i32, %arg1: i1, %arg2: f64) -> i32 "None" {
+spv.func @value_scalar(%arg0: i32, %arg1: i1, %arg2: f64) -> i32 <None> {
   spv.ReturnValue %arg0: i32
 }
 
-spv.func @value_vector(%arg0: vector<2xi64>, %arg1: vector<2xf32>) -> vector<2xf32> "None" {
+spv.func @value_vector(%arg0: vector<2xi64>, %arg1: vector<2xf32>) -> vector<2xf32> <None> {
   spv.ReturnValue %arg1: vector<2xf32>
 }

@@ -14,7 +14,7 @@ func.func @while_loop1(%arg0: i32, %arg1: i32) -> i32 {
   // CHECK:   spv.Branch ^[[HEADER:.*]](%[[ARG1]] : i32)
   // CHECK: ^[[HEADER]](%[[INDVAR1:.*]]: i32):
   // CHECK:   %[[CMP:.*]] = spv.SLessThan %[[INDVAR1]], %[[ARG2]] : i32
-  // CHECK:   spv.Store "Function" %[[VAR1]], %[[INDVAR1]] : i32
+  // CHECK:   spv.Store <Function> %[[VAR1]], %[[INDVAR1]] : i32
   // CHECK:   spv.BranchConditional %[[CMP]], ^[[BODY:.*]](%[[INDVAR1]] : i32), ^[[MERGE:.*]]
   // CHECK: ^[[BODY]](%[[INDVAR2:.*]]: i32):
   // CHECK:   %[[UPDATED:.*]] = spv.IMul %[[INDVAR2]], %[[INITVAR]] : i32
@@ -31,7 +31,7 @@ func.func @while_loop1(%arg0: i32, %arg1: i32) -> i32 {
     %1 = arith.muli %arg5, %c2_i32 : i32
     scf.yield %1 : i32
   }
-  // CHECK: %[[OUT:.*]] = spv.Load "Function" %[[VAR1]] : i32
+  // CHECK: %[[OUT:.*]] = spv.Load <Function> %[[VAR1]] : i32
   // CHECK: spv.ReturnValue %[[OUT]] : i32
   return %0 : i32
 }
@@ -47,7 +47,7 @@ func.func @while_loop2(%arg0: f32) -> i64 {
   // CHECK: ^[[HEADER]](%[[INDVAR1:.*]]: f32):
   // CHECK:   %[[SHARED:.*]] = "foo.shared_compute"(%[[INDVAR1]]) : (f32) -> i64
   // CHECK:   %[[CMP:.*]] = "foo.evaluate_condition"(%[[INDVAR1]], %[[SHARED]]) : (f32, i64) -> i1
-  // CHECK:   spv.Store "Function" %[[VAR]], %[[SHARED]] : i64
+  // CHECK:   spv.Store <Function> %[[VAR]], %[[SHARED]] : i64
   // CHECK:   spv.BranchConditional %[[CMP]], ^[[BODY:.*]](%[[SHARED]] : i64), ^[[MERGE:.*]]
   // CHECK: ^[[BODY]](%[[INDVAR2:.*]]: i64):
   // CHECK:   %[[UPDATED:.*]] = "foo.payload"(%[[INDVAR2]]) : (i64) -> f32
@@ -64,7 +64,7 @@ func.func @while_loop2(%arg0: f32) -> i64 {
     %res = "foo.payload"(%arg2) : (i64) -> f32
     scf.yield %res : f32
   }
-  // CHECK: %[[OUT:.*]] = spv.Load "Function" %[[VAR]] : i64
+  // CHECK: %[[OUT:.*]] = spv.Load <Function> %[[VAR]] : i64
   // CHECK: spv.ReturnValue %[[OUT]] : i64
   return %res : i64
 }

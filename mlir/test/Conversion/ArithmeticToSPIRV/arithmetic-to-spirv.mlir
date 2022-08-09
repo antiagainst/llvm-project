@@ -761,7 +761,7 @@ func.func @uitofp_vec_i1_f32(%arg0 : vector<4xi1>) -> vector<4xf32> {
 }
 
 // CHECK-LABEL: @uitofp_vec_i1_f64
-spv.func @uitofp_vec_i1_f64(%arg0: vector<4xi1>) -> vector<4xf64> "None" {
+spv.func @uitofp_vec_i1_f64(%arg0: vector<4xi1>) -> vector<4xf64> <None> {
   // CHECK: %[[ZERO:.+]] = spv.Constant dense<0.000000e+00> : vector<4xf64>
   // CHECK: %[[ONE:.+]] = spv.Constant dense<1.000000e+00> : vector<4xf64>
   // CHECK: spv.Select %{{.*}}, %[[ONE]], %[[ZERO]] : vector<4xi1>, vector<4xf64>
@@ -1666,7 +1666,7 @@ func.func @uitofp_vec_i1_f32(%arg0 : vector<4xi1>) -> vector<4xf32> {
 }
 
 // CHECK-LABEL: @uitofp_vec_i1_f64
-spv.func @uitofp_vec_i1_f64(%arg0: vector<4xi1>) -> vector<4xf64> "None" {
+spv.func @uitofp_vec_i1_f64(%arg0: vector<4xi1>) -> vector<4xf64> <None> {
   // CHECK: %[[ZERO:.+]] = spv.Constant dense<0.000000e+00> : vector<4xf64>
   // CHECK: %[[ONE:.+]] = spv.Constant dense<1.000000e+00> : vector<4xf64>
   // CHECK: spv.Select %{{.*}}, %[[ONE]], %[[ZERO]] : vector<4xi1>, vector<4xf64>

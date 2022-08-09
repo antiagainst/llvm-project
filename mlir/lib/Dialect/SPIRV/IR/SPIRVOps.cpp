@@ -165,71 +165,55 @@ getStrArrayAttrForEnumList(Builder &builder, ArrayRef<Ty> enumValues,
   return builder.getStrArrayAttr(enumValStrs);
 }
 
-/// Parses the next string attribute in `parser` as an enumerant of the given
-/// `EnumClass`.
-template <typename EnumClass>
+/// Parses the next SPIR-V attribute in `parser` as an enumerant of the given
+/// `EnumClass`. If `state` is not null, also inserts the enumerant into `state`
+/// with the enum class's name as attribute name.
+template <typename EnumClassAttr>
 static ParseResult
-parseEnumStrAttr(EnumClass &value, OpAsmParser &parser,
-                 StringRef attrName = spirv::attributeName<EnumClass>()) {
-  Attribute attrVal;
-  NamedAttrList attr;
-  auto loc = parser.getCurrentLocation();
-  if (parser.parseAttribute(attrVal, parser.getBuilder().getNoneType(),
-                            attrName, attr))
-    return failure();
-  if (!attrVal.isa<StringAttr>())
-    return parser.emitError(loc, "expected ")
-           << attrName << " attribute specified as string";
-  auto attrOptional =
-      spirv::symbolizeEnum<EnumClass>(attrVal.cast<StringAttr>().getValue());
-  if (!attrOptional)
-    return parser.emitError(loc, "invalid ")
-           << attrName << " attribute specification: " << attrVal;
-  value = *attrOptional;
-  return success();
+parseEnumAttr(EnumClassAttr &attr, OpAsmParser &parser, NamedAttrList &attrList,
+              StringRef attrName = EnumClassAttr::getMnemonic()) {
+  return parser.parseCustomAttributeWithFallback(attr, Type(), attrName,
+                                                 attrList);
 }
 
-/// Parses the next string attribute in `parser` as an enumerant of the given
-/// `EnumClass` and inserts the enumerant into `state` as an 32-bit integer
-/// attribute with the enum class's name as attribute name.
-template <typename EnumAttrClass,
-          typename EnumClass = typename EnumAttrClass::ValueType>
+template <typename EnumClassAttr>
 static ParseResult
-parseEnumStrAttr(EnumClass &value, OpAsmParser &parser, OperationState &state,
-                 StringRef attrName = spirv::attributeName<EnumClass>()) {
-  if (parseEnumStrAttr(value, parser))
-    return failure();
-  state.addAttribute(attrName,
-                     parser.getBuilder().getAttr<EnumAttrClass>(value));
-  return success();
+parseEnumAttr(EnumClassAttr &attr, OpAsmParser &parser,
+              StringRef attrName = EnumClassAttr::getMnemonic()) {
+  NamedAttrList attrList;
+  return parser.parseCustomAttributeWithFallback(attr, Type(), attrName,
+                                                 attrList);
 }
 
 /// Parses the next keyword in `parser` as an enumerant of the given `EnumClass`
 /// and inserts the enumerant into `state` as an 32-bit integer attribute with
 /// the enum class's name as attribute name.
-template <typename EnumAttrClass,
-          typename EnumClass = typename EnumAttrClass::ValueType>
+template <
+    typename EnumClassAttr,
+    typename EnumClass = decltype(std::declval<EnumClassAttr>().getValue())>
 static ParseResult
 parseEnumKeywordAttr(EnumClass &value, OpAsmParser &parser,
                      OperationState &state,
-                     StringRef attrName = spirv::attributeName<EnumClass>()) {
+                     StringRef attrName = EnumClassAttr::getMnemonic()) {
   if (parseEnumKeywordAttr(value, parser))
     return failure();
   state.addAttribute(attrName,
-                     parser.getBuilder().getAttr<EnumAttrClass>(value));
+                     parser.getBuilder().getAttr<EnumClassAttr>(value));
   return success();
 }
 
 /// Parses Function, Selection and Loop control attributes. If no control is
 /// specified, "None" is used as a default.
-template <typename EnumAttrClass, typename EnumClass>
+template <
+    typename EnumClassAttr,
+    typename EnumClass = decltype(std::declval<EnumClassAttr>().getValue())>
 static ParseResult
 parseControlAttribute(OpAsmParser &parser, OperationState &state,
-                      StringRef attrName = spirv::attributeName<EnumClass>()) {
+                      StringRef attrName = EnumClassAttr::getMnemonic()) {
   if (succeeded(parser.parseOptionalKeyword(kControl))) {
     EnumClass control;
     if (parser.parseLParen() ||
-        parseEnumKeywordAttr<EnumAttrClass>(control, parser, state) ||
+        parseEnumKeywordAttr<EnumClassAttr>(control, parser, state) ||
         parser.parseRParen())
       return failure();
     return success();
@@ -237,7 +221,7 @@ parseControlAttribute(OpAsmParser &parser, OperationState &state,
   // Set control to "None" otherwise.
   Builder builder = parser.getBuilder();
   state.addAttribute(attrName,
-                     builder.getAttr<EnumAttrClass>(static_cast<EnumClass>(0)));
+                     builder.getAttr<EnumClassAttr>(static_cast<EnumClass>(0)));
   return success();
 }
 
@@ -255,12 +239,13 @@ static ParseResult parseMemoryAccessAttributes(OpAsmParser &parser,
     return success();
   }
 
-  spirv::MemoryAccess memoryAccessAttr;
-  if (parseEnumStrAttr<spirv::MemoryAccessAttr>(memoryAccessAttr, parser, state,
-                                                kMemoryAccessAttrName))
+  spirv::MemoryAccessAttr memoryAccessAttr;
+  if (parseEnumAttr<spirv::MemoryAccessAttr>(
+          memoryAccessAttr, parser, state.attributes, kMemoryAccessAttrName))
     return failure();
 
-  if (spirv::bitEnumContains(memoryAccessAttr, spirv::MemoryAccess::Aligned)) {
+  if (spirv::bitEnumContains(memoryAccessAttr.getValue(),
+                             spirv::MemoryAccess::Aligned)) {
     // Parse integer attribute for alignment.
     Attribute alignmentAttr;
     Type i32Type = parser.getBuilder().getIntegerType(32);
@@ -285,12 +270,14 @@ static ParseResult parseSourceMemoryAccessAttributes(OpAsmParser &parser,
     return success();
   }
 
-  spirv::MemoryAccess memoryAccessAttr;
-  if (parseEnumStrAttr<spirv::MemoryAccessAttr>(memoryAccessAttr, parser, state,
-                                                kSourceMemoryAccessAttrName))
+  spirv::MemoryAccessAttr memoryAccessAttr;
+  if (parseEnumAttr<spirv::MemoryAccessAttr>(memoryAccessAttr, parser,
+                                             state.attributes,
+                                             kSourceMemoryAccessAttrName))
     return failure();
 
-  if (spirv::bitEnumContains(memoryAccessAttr, spirv::MemoryAccess::Aligned)) {
+  if (spirv::bitEnumContains(memoryAccessAttr.getValue(),
+                             spirv::MemoryAccess::Aligned)) {
     // Parse integer attribute for alignment.
     Attribute alignmentAttr;
     Type i32Type = parser.getBuilder().getIntegerType(32);
@@ -326,7 +313,7 @@ static void printMemoryAccessAttribute(
     }
     printer << "]";
   }
-  elidedAttrs.push_back(spirv::attributeName<spirv::StorageClass>());
+  elidedAttrs.push_back(spirv::StorageClassAttr::getMnemonic());
 }
 
 // TODO Make sure to merge this and the previous function into one template
@@ -359,7 +346,7 @@ static void printSourceMemoryAccessAttribute(
     }
     printer << "]";
   }
-  elidedAttrs.push_back(spirv::attributeName<spirv::StorageClass>());
+  elidedAttrs.push_back(spirv::StorageClassAttr::getMnemonic());
 }
 
 static ParseResult parseImageOperands(OpAsmParser &parser,
@@ -368,11 +355,9 @@ static ParseResult parseImageOperands(OpAsmParser &parser,
   if (parser.parseOptionalLSquare())
     return success();
 
-  spirv::ImageOperands imageOperands;
-  if (parseEnumStrAttr(imageOperands, parser))
+  spirv::ImageOperandsAttr imageOperands;
+  if (parseEnumAttr(imageOperands, parser))
     return failure();
-
-  attr = spirv::ImageOperandsAttr::get(parser.getContext(), imageOperands);
 
   return parser.parseRSquare();
 }
@@ -762,16 +747,16 @@ static inline bool isMergeBlock(Block &block) {
 // AtomicIIncrement) `hasValue` must be false.
 static ParseResult parseAtomicUpdateOp(OpAsmParser &parser,
                                        OperationState &state, bool hasValue) {
-  spirv::Scope scope;
-  spirv::MemorySemantics memoryScope;
+  spirv::ScopeAttr scope;
+  spirv::MemorySemanticsAttr memoryScope;
   SmallVector<OpAsmParser::UnresolvedOperand, 2> operandInfo;
   OpAsmParser::UnresolvedOperand ptrInfo, valueInfo;
   Type type;
   SMLoc loc;
-  if (parseEnumStrAttr<spirv::ScopeAttr>(scope, parser, state,
-                                         kMemoryScopeAttrName) ||
-      parseEnumStrAttr<spirv::MemorySemanticsAttr>(memoryScope, parser, state,
-                                                   kSemanticsAttrName) ||
+  if (parseEnumAttr<spirv::ScopeAttr>(scope, parser, state.attributes,
+                                      kMemoryScopeAttrName) ||
+      parseEnumAttr<spirv::MemorySemanticsAttr>(
+          memoryScope, parser, state.attributes, kSemanticsAttrName) ||
       parser.parseOperandList(operandInfo, (hasValue ? 2 : 1)) ||
       parser.getCurrentLocation(&loc) || parser.parseColonType(type))
     return failure();
@@ -842,13 +827,13 @@ static LogicalResult verifyAtomicUpdateOp(Operation *op) {
 
 static ParseResult parseGroupNonUniformArithmeticOp(OpAsmParser &parser,
                                                     OperationState &state) {
-  spirv::Scope executionScope;
-  spirv::GroupOperation groupOperation;
+  spirv::ScopeAttr executionScope;
+  spirv::GroupOperationAttr groupOperation;
   OpAsmParser::UnresolvedOperand valueInfo;
-  if (parseEnumStrAttr<spirv::ScopeAttr>(executionScope, parser, state,
-                                         kExecutionScopeAttrName) ||
-      parseEnumStrAttr<spirv::GroupOperationAttr>(groupOperation, parser, state,
-                                                  kGroupOperationAttrName) ||
+  if (parseEnumAttr<spirv::ScopeAttr>(executionScope, parser, state.attributes,
+                                      kExecutionScopeAttrName) ||
+      parseEnumAttr<spirv::GroupOperationAttr>(
+          groupOperation, parser, state.attributes, kGroupOperationAttrName) ||
       parser.parseOperand(valueInfo))
     return failure();
 
@@ -1143,16 +1128,17 @@ static void printAtomicCompareExchangeImpl(T atomOp, OpAsmPrinter &printer) {
 
 static ParseResult parseAtomicCompareExchangeImpl(OpAsmParser &parser,
                                                   OperationState &state) {
-  spirv::Scope memoryScope;
-  spirv::MemorySemantics equalSemantics, unequalSemantics;
+  spirv::ScopeAttr memoryScope;
+  spirv::MemorySemanticsAttr equalSemantics, unequalSemantics;
   SmallVector<OpAsmParser::UnresolvedOperand, 3> operandInfo;
   Type type;
-  if (parseEnumStrAttr<spirv::ScopeAttr>(memoryScope, parser, state,
-                                         kMemoryScopeAttrName) ||
-      parseEnumStrAttr<spirv::MemorySemanticsAttr>(
-          equalSemantics, parser, state, kEqualSemanticsAttrName) ||
-      parseEnumStrAttr<spirv::MemorySemanticsAttr>(
-          unequalSemantics, parser, state, kUnequalSemanticsAttrName) ||
+  if (parseEnumAttr<spirv::ScopeAttr>(memoryScope, parser, state.attributes,
+                                      kMemoryScopeAttrName) ||
+      parseEnumAttr<spirv::MemorySemanticsAttr>(
+          equalSemantics, parser, state.attributes, kEqualSemanticsAttrName) ||
+      parseEnumAttr<spirv::MemorySemanticsAttr>(unequalSemantics, parser,
+                                                state.attributes,
+                                                kUnequalSemanticsAttrName) ||
       parser.parseOperandList(operandInfo, 3))
     return failure();
 
@@ -1266,14 +1252,14 @@ void spirv::AtomicExchangeOp::print(OpAsmPrinter &printer) {
 
 ParseResult spirv::AtomicExchangeOp::parse(OpAsmParser &parser,
                                            OperationState &result) {
-  spirv::Scope memoryScope;
-  spirv::MemorySemantics semantics;
+  spirv::ScopeAttr memoryScope;
+  spirv::MemorySemanticsAttr semantics;
   SmallVector<OpAsmParser::UnresolvedOperand, 2> operandInfo;
   Type type;
-  if (parseEnumStrAttr<spirv::ScopeAttr>(memoryScope, parser, result,
-                                         kMemoryScopeAttrName) ||
-      parseEnumStrAttr<spirv::MemorySemanticsAttr>(semantics, parser, result,
-                                                   kSemanticsAttrName) ||
+  if (parseEnumAttr<spirv::ScopeAttr>(memoryScope, parser, result.attributes,
+                                      kMemoryScopeAttrName) ||
+      parseEnumAttr<spirv::MemorySemanticsAttr>(
+          semantics, parser, result.attributes, kSemanticsAttrName) ||
       parser.parseOperandList(operandInfo, 2))
     return failure();
 
@@ -2074,13 +2060,14 @@ void spirv::EntryPointOp::build(OpBuilder &builder, OperationState &state,
 
 ParseResult spirv::EntryPointOp::parse(OpAsmParser &parser,
                                        OperationState &result) {
-  spirv::ExecutionModel execModel;
+  spirv::ExecutionModelAttr execModel;
   SmallVector<OpAsmParser::UnresolvedOperand, 0> identifiers;
   SmallVector<Type, 0> idTypes;
   SmallVector<Attribute, 4> interfaceVars;
 
   FlatSymbolRefAttr fn;
-  if (parseEnumStrAttr<spirv::ExecutionModelAttr>(execModel, parser, result) ||
+  if (parseEnumAttr<spirv::ExecutionModelAttr>(execModel, parser,
+                                               result.attributes) ||
       parser.parseAttribute(fn, Type(), kFnNameAttrName, result.attributes)) {
     return failure();
   }
@@ -2134,10 +2121,11 @@ void spirv::ExecutionModeOp::build(OpBuilder &builder, OperationState &state,
 
 ParseResult spirv::ExecutionModeOp::parse(OpAsmParser &parser,
                                           OperationState &result) {
-  spirv::ExecutionMode execMode;
+  spirv::ExecutionModeAttr execMode;
   Attribute fn;
   if (parser.parseAttribute(fn, kFnNameAttrName, result.attributes) ||
-      parseEnumStrAttr<spirv::ExecutionModeAttr>(execMode, parser, result)) {
+      parseEnumAttr<spirv::ExecutionModeAttr>(execMode, parser,
+                                              result.attributes)) {
     return failure();
   }
 
@@ -2224,8 +2212,9 @@ ParseResult spirv::FuncOp::parse(OpAsmParser &parser, OperationState &result) {
                       TypeAttr::get(fnType));
 
   // Parse the optional function control keyword.
-  spirv::FunctionControl fnControl;
-  if (parseEnumStrAttr<spirv::FunctionControlAttr>(fnControl, parser, result))
+  spirv::FunctionControlAttr fnControl;
+  if (parseEnumAttr<spirv::FunctionControlAttr>(fnControl, parser,
+                                                result.attributes))
     return failure();
 
   // If additional attributes are present, parse them.
@@ -2256,7 +2245,7 @@ void spirv::FuncOp::print(OpAsmPrinter &printer) {
           << "\"";
   function_interface_impl::printFunctionAttributes(
       printer, *this, fnType.getNumInputs(), fnType.getNumResults(),
-      {spirv::attributeName<spirv::FunctionControl>()});
+      {spirv::FunctionControlAttr::getMnemonic()});
 
   // Print the body if this is not an external function.
   Region &body = this->body();
@@ -2312,7 +2301,7 @@ void spirv::FuncOp::build(OpBuilder &builder, OperationState &state,
   state.addAttribute(SymbolTable::getSymbolAttrName(),
                      builder.getStringAttr(name));
   state.addAttribute(getTypeAttrName(), TypeAttr::get(type));
-  state.addAttribute(spirv::attributeName<spirv::FunctionControl>(),
+  state.addAttribute(spirv::FunctionControlAttr::getMnemonic(),
                      builder.getAttr<spirv::FunctionControlAttr>(control));
   state.attributes.append(attrs.begin(), attrs.end());
   state.addRegion();
@@ -2490,8 +2479,7 @@ ParseResult spirv::GlobalVariableOp::parse(OpAsmParser &parser,
 }
 
 void spirv::GlobalVariableOp::print(OpAsmPrinter &printer) {
-  SmallVector<StringRef, 4> elidedAttrs{
-      spirv::attributeName<spirv::StorageClass>()};
+  SmallVector<StringRef, 4> elidedAttrs{spirv::StorageClassAttr::getMnemonic()};
 
   // Print variable name.
   printer << ' ';
@@ -2602,17 +2590,18 @@ LogicalResult spirv::GroupNonUniformBroadcastOp::verify() {
 ParseResult spirv::SubgroupBlockReadINTELOp::parse(OpAsmParser &parser,
                                                    OperationState &result) {
   // Parse the storage class specification
-  spirv::StorageClass storageClass;
+  spirv::StorageClassAttr storageClass;
   OpAsmParser::UnresolvedOperand ptrInfo;
   Type elementType;
-  if (parseEnumStrAttr(storageClass, parser) || parser.parseOperand(ptrInfo) ||
+  if (parseEnumAttr(storageClass, parser) || parser.parseOperand(ptrInfo) ||
       parser.parseColon() || parser.parseType(elementType)) {
     return failure();
   }
 
-  auto ptrType = spirv::PointerType::get(elementType, storageClass);
+  auto ptrType = spirv::PointerType::get(elementType, storageClass.getValue());
   if (auto valVecTy = elementType.dyn_cast<VectorType>())
-    ptrType = spirv::PointerType::get(valVecTy.getElementType(), storageClass);
+    ptrType = spirv::PointerType::get(valVecTy.getElementType(),
+                                      storageClass.getValue());
 
   if (parser.resolveOperand(ptrInfo, ptrType, result.operands)) {
     return failure();
@@ -2640,19 +2629,20 @@ LogicalResult spirv::SubgroupBlockReadINTELOp::verify() {
 ParseResult spirv::SubgroupBlockWriteINTELOp::parse(OpAsmParser &parser,
                                                     OperationState &result) {
   // Parse the storage class specification
-  spirv::StorageClass storageClass;
+  spirv::StorageClassAttr storageClass;
   SmallVector<OpAsmParser::UnresolvedOperand, 2> operandInfo;
   auto loc = parser.getCurrentLocation();
   Type elementType;
-  if (parseEnumStrAttr(storageClass, parser) ||
+  if (parseEnumAttr(storageClass, parser) ||
       parser.parseOperandList(operandInfo, 2) || parser.parseColon() ||
       parser.parseType(elementType)) {
     return failure();
   }
 
-  auto ptrType = spirv::PointerType::get(elementType, storageClass);
+  auto ptrType = spirv::PointerType::get(elementType, storageClass.getValue());
   if (auto valVecTy = elementType.dyn_cast<VectorType>())
-    ptrType = spirv::PointerType::get(valVecTy.getElementType(), storageClass);
+    ptrType = spirv::PointerType::get(valVecTy.getElementType(),
+                                      storageClass.getValue());
 
   if (parser.resolveOperands(operandInfo, {ptrType, elementType}, loc,
                              result.operands)) {
@@ -2956,17 +2946,17 @@ void spirv::LoadOp::build(OpBuilder &builder, OperationState &state,
 
 ParseResult spirv::LoadOp::parse(OpAsmParser &parser, OperationState &result) {
   // Parse the storage class specification
-  spirv::StorageClass storageClass;
+  spirv::StorageClassAttr storageClass;
   OpAsmParser::UnresolvedOperand ptrInfo;
   Type elementType;
-  if (parseEnumStrAttr(storageClass, parser) || parser.parseOperand(ptrInfo) ||
+  if (parseEnumAttr(storageClass, parser) || parser.parseOperand(ptrInfo) ||
       parseMemoryAccessAttributes(parser, result) ||
       parser.parseOptionalAttrDict(result.attributes) || parser.parseColon() ||
       parser.parseType(elementType)) {
     return failure();
   }
 
-  auto ptrType = spirv::PointerType::get(elementType, storageClass);
+  auto ptrType = spirv::PointerType::get(elementType, storageClass.getValue());
   if (parser.resolveOperand(ptrInfo, ptrType, result.operands)) {
     return failure();
   }
@@ -2979,7 +2969,7 @@ void spirv::LoadOp::print(OpAsmPrinter &printer) {
   SmallVector<StringRef, 4> elidedAttrs;
   StringRef sc = stringifyStorageClass(
       ptr().getType().cast<spirv::PointerType>().getStorageClass());
-  printer << " \"" << sc << "\" " << ptr();
+  printer << " <" << sc << "> " << ptr();
 
   printMemoryAccessAttribute(*this, printer, elidedAttrs);
 
@@ -3008,8 +2998,7 @@ void spirv::LoopOp::build(OpBuilder &builder, OperationState &state) {
 }
 
 ParseResult spirv::LoopOp::parse(OpAsmParser &parser, OperationState &result) {
-  if (parseControlAttribute<spirv::LoopControlAttr, spirv::LoopControl>(parser,
-                                                                        result))
+  if (parseControlAttribute<spirv::LoopControlAttr>(parser, result))
     return failure();
   return parser.parseRegion(*result.addRegion(), /*arguments=*/{});
 }
@@ -3259,8 +3248,8 @@ void spirv::ModuleOp::print(OpAsmPrinter &printer) {
 
   printer << " " << spirv::stringifyAddressingModel(addressing_model()) << " "
           << spirv::stringifyMemoryModel(memory_model());
-  auto addressingModelAttrName = spirv::attributeName<spirv::AddressingModel>();
-  auto memoryModelAttrName = spirv::attributeName<spirv::MemoryModel>();
+  auto addressingModelAttrName = spirv::AddressingModelAttr::getMnemonic();
+  auto memoryModelAttrName = spirv::MemoryModelAttr::getMnemonic();
   elidedAttrs.assign({addressingModelAttrName, memoryModelAttrName,
                       mlir::SymbolTable::getSymbolAttrName()});
 
@@ -3408,8 +3397,7 @@ LogicalResult spirv::SelectOp::verify() {
 
 ParseResult spirv::SelectionOp::parse(OpAsmParser &parser,
                                       OperationState &result) {
-  if (parseControlAttribute<spirv::SelectionControlAttr,
-                            spirv::SelectionControl>(parser, result))
+  if (parseControlAttribute<spirv::SelectionControlAttr>(parser, result))
     return failure();
   return parser.parseRegion(*result.addRegion(), /*arguments=*/{});
 }
@@ -3577,18 +3565,18 @@ LogicalResult spirv::SpecConstantOp::verify() {
 
 ParseResult spirv::StoreOp::parse(OpAsmParser &parser, OperationState &result) {
   // Parse the storage class specification
-  spirv::StorageClass storageClass;
+  spirv::StorageClassAttr storageClass;
   SmallVector<OpAsmParser::UnresolvedOperand, 2> operandInfo;
   auto loc = parser.getCurrentLocation();
   Type elementType;
-  if (parseEnumStrAttr(storageClass, parser) ||
+  if (parseEnumAttr(storageClass, parser) ||
       parser.parseOperandList(operandInfo, 2) ||
       parseMemoryAccessAttributes(parser, result) || parser.parseColon() ||
       parser.parseType(elementType)) {
     return failure();
   }
 
-  auto ptrType = spirv::PointerType::get(elementType, storageClass);
+  auto ptrType = spirv::PointerType::get(elementType, storageClass.getValue());
   if (parser.resolveOperands(operandInfo, {ptrType, elementType}, loc,
                              result.operands)) {
     return failure();
@@ -3600,7 +3588,7 @@ void spirv::StoreOp::print(OpAsmPrinter &printer) {
   SmallVector<StringRef, 4> elidedAttrs;
   StringRef sc = stringifyStorageClass(
       ptr().getType().cast<spirv::PointerType>().getStorageClass());
-  printer << " \"" << sc << "\" " << ptr() << ", " << value();
+  printer << " <" << sc << "> " << ptr() << ", " << value();
 
   printMemoryAccessAttribute(*this, printer, elidedAttrs);
 
@@ -3676,14 +3664,13 @@ ParseResult spirv::VariableOp::parse(OpAsmParser &parser,
 
   auto attr = parser.getBuilder().getAttr<spirv::StorageClassAttr>(
       ptrType.getStorageClass());
-  result.addAttribute(spirv::attributeName<spirv::StorageClass>(), attr);
+  result.addAttribute(spirv::StorageClassAttr::getMnemonic(), attr);
 
   return success();
 }
 
 void spirv::VariableOp::print(OpAsmPrinter &printer) {
-  SmallVector<StringRef, 4> elidedAttrs{
-      spirv::attributeName<spirv::StorageClass>()};
+  SmallVector<StringRef, 4> elidedAttrs{spirv::StorageClassAttr::getMnemonic()};
   // Print optional initializer
   if (getNumOperands() != 0)
     printer << " init(" << initializer() << ")";
@@ -3959,17 +3946,17 @@ void spirv::CopyMemoryOp::print(OpAsmPrinter &printer) {
 
 ParseResult spirv::CopyMemoryOp::parse(OpAsmParser &parser,
                                        OperationState &result) {
-  spirv::StorageClass targetStorageClass;
+  spirv::StorageClassAttr targetStorageClass;
   OpAsmParser::UnresolvedOperand targetPtrInfo;
 
-  spirv::StorageClass sourceStorageClass;
+  spirv::StorageClassAttr sourceStorageClass;
   OpAsmParser::UnresolvedOperand sourcePtrInfo;
 
   Type elementType;
 
-  if (parseEnumStrAttr(targetStorageClass, parser) ||
+  if (parseEnumAttr(targetStorageClass, parser) ||
       parser.parseOperand(targetPtrInfo) || parser.parseComma() ||
-      parseEnumStrAttr(sourceStorageClass, parser) ||
+      parseEnumAttr(sourceStorageClass, parser) ||
       parser.parseOperand(sourcePtrInfo) ||
       parseMemoryAccessAttributes(parser, result)) {
     return failure();
@@ -3988,8 +3975,10 @@ ParseResult spirv::CopyMemoryOp::parse(OpAsmParser &parser,
   if (parser.parseOptionalAttrDict(result.attributes))
     return failure();
 
-  auto targetPtrType = spirv::PointerType::get(elementType, targetStorageClass);
-  auto sourcePtrType = spirv::PointerType::get(elementType, sourceStorageClass);
+  auto targetPtrType =
+      spirv::PointerType::get(elementType, targetStorageClass.getValue());
+  auto sourcePtrType =
+      spirv::PointerType::get(elementType, sourceStorageClass.getValue());
 
   if (parser.resolveOperand(targetPtrInfo, targetPtrType, result.operands) ||
       parser.resolveOperand(sourcePtrInfo, sourcePtrType, result.operands)) {

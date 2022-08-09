@@ -16,7 +16,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], [SPV_KHR_16bit_stor
 // CHECK: module
 spv.module Logical GLSL450 {
 	// CHECK-LABEL: llvm.func @empty()
-  spv.func @empty() -> () "None" {
+  spv.func @empty() -> () <None> {
 		// CHECK: llvm.return
     spv.Return
   }

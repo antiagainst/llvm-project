@@ -1,7 +1,7 @@
 // RUN: mlir-translate -test-spirv-roundtrip %s | FileCheck %s
 
 spv.module Physical64 OpenCL requires #spv.vce<v1.0, [Kernel, Addresses], []> {
-  spv.func @float_insts(%arg0 : f32) "None" {
+  spv.func @float_insts(%arg0 : f32) <None> {
     // CHECK: {{%.*}} = spv.CL.exp {{%.*}} : f32
     %0 = spv.CL.exp %arg0 : f32
     // CHECK: {{%.*}} = spv.CL.fabs {{%.*}} : f32
@@ -27,19 +27,19 @@ spv.module Physical64 OpenCL requires #spv.vce<v1.0, [Kernel, Addresses], []> {
     spv.Return
   }
 
-  spv.func @integer_insts(%arg0 : i32) "None" {
+  spv.func @integer_insts(%arg0 : i32) <None> {
     // CHECK: {{%.*}} = spv.CL.s_abs {{%.*}} : i32
     %0 = spv.CL.s_abs %arg0 : i32
     spv.Return
   }
   
-  spv.func @vector_size16(%arg0 : vector<16xf32>) "None" {
+  spv.func @vector_size16(%arg0 : vector<16xf32>) <None> {
     // CHECK: {{%.*}} = spv.CL.fabs {{%.*}} : vector<16xf32>
     %0 = spv.CL.fabs %arg0 : vector<16xf32>
     spv.Return
   }
 
-  spv.func @fma(%arg0 : f32, %arg1 : f32, %arg2 : f32) "None" {
+  spv.func @fma(%arg0 : f32, %arg1 : f32, %arg2 : f32) <None> {
     // CHECK: spv.CL.fma {{%[^,]*}}, {{%[^,]*}}, {{%[^,]*}} : f32
     %13 = spv.CL.fma %arg0, %arg1, %arg2 : f32
     spv.Return

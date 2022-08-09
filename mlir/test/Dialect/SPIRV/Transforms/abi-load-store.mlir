@@ -37,7 +37,7 @@ spv.module Logical GLSL450 {
     %arg5: i32
     {spv.interface_var_abi = #spv.interface_var_abi<(0, 5), StorageBuffer>},
     %arg6: i32
-    {spv.interface_var_abi = #spv.interface_var_abi<(0, 6), StorageBuffer>}) "None"
+    {spv.interface_var_abi = #spv.interface_var_abi<(0, 6), StorageBuffer>}) <None>
   attributes  {spv.entry_point_abi = #spv.entry_point_abi<local_size = dense<[32, 1, 1]> : vector<3xi32>>} {
     // CHECK: [[ADDRESSARG6:%.*]] = spv.mlir.addressof [[VAR6]]
     // CHECK: [[CONST6:%.*]] = spv.Constant 0 : i32
@@ -62,40 +62,40 @@ spv.module Logical GLSL450 {
     // CHECK: [[ADDRESSARG0:%.*]] = spv.mlir.addressof [[VAR0]]
     // CHECK: [[ARG0:%.*]] = spv.Bitcast [[ADDRESSARG0]]
     %0 = spv.mlir.addressof @__builtin_var_WorkgroupId__ : !spv.ptr<vector<3xi32>, Input>
-    %1 = spv.Load "Input" %0 : vector<3xi32>
+    %1 = spv.Load <Input> %0 : vector<3xi32>
     %2 = spv.CompositeExtract %1[0 : i32] : vector<3xi32>
     %3 = spv.mlir.addressof @__builtin_var_WorkgroupId__ : !spv.ptr<vector<3xi32>, Input>
-    %4 = spv.Load "Input" %3 : vector<3xi32>
+    %4 = spv.Load <Input> %3 : vector<3xi32>
     %5 = spv.CompositeExtract %4[1 : i32] : vector<3xi32>
     %6 = spv.mlir.addressof @__builtin_var_WorkgroupId__ : !spv.ptr<vector<3xi32>, Input>
-    %7 = spv.Load "Input" %6 : vector<3xi32>
+    %7 = spv.Load <Input> %6 : vector<3xi32>
     %8 = spv.CompositeExtract %7[2 : i32] : vector<3xi32>
     %9 = spv.mlir.addressof @__builtin_var_LocalInvocationId__ : !spv.ptr<vector<3xi32>, Input>
-    %10 = spv.Load "Input" %9 : vector<3xi32>
+    %10 = spv.Load <Input> %9 : vector<3xi32>
     %11 = spv.CompositeExtract %10[0 : i32] : vector<3xi32>
     %12 = spv.mlir.addressof @__builtin_var_LocalInvocationId__ : !spv.ptr<vector<3xi32>, Input>
-    %13 = spv.Load "Input" %12 : vector<3xi32>
+    %13 = spv.Load <Input> %12 : vector<3xi32>
     %14 = spv.CompositeExtract %13[1 : i32] : vector<3xi32>
     %15 = spv.mlir.addressof @__builtin_var_LocalInvocationId__ : !spv.ptr<vector<3xi32>, Input>
-    %16 = spv.Load "Input" %15 : vector<3xi32>
+    %16 = spv.Load <Input> %15 : vector<3xi32>
     %17 = spv.CompositeExtract %16[2 : i32] : vector<3xi32>
     %18 = spv.mlir.addressof @__builtin_var_NumWorkgroups__ : !spv.ptr<vector<3xi32>, Input>
-    %19 = spv.Load "Input" %18 : vector<3xi32>
+    %19 = spv.Load <Input> %18 : vector<3xi32>
     %20 = spv.CompositeExtract %19[0 : i32] : vector<3xi32>
     %21 = spv.mlir.addressof @__builtin_var_NumWorkgroups__ : !spv.ptr<vector<3xi32>, Input>
-    %22 = spv.Load "Input" %21 : vector<3xi32>
+    %22 = spv.Load <Input> %21 : vector<3xi32>
     %23 = spv.CompositeExtract %22[1 : i32] : vector<3xi32>
     %24 = spv.mlir.addressof @__builtin_var_NumWorkgroups__ : !spv.ptr<vector<3xi32>, Input>
-    %25 = spv.Load "Input" %24 : vector<3xi32>
+    %25 = spv.Load <Input> %24 : vector<3xi32>
     %26 = spv.CompositeExtract %25[2 : i32] : vector<3xi32>
     %27 = spv.mlir.addressof @__builtin_var_WorkgroupSize__ : !spv.ptr<vector<3xi32>, Input>
-    %28 = spv.Load "Input" %27 : vector<3xi32>
+    %28 = spv.Load <Input> %27 : vector<3xi32>
     %29 = spv.CompositeExtract %28[0 : i32] : vector<3xi32>
     %30 = spv.mlir.addressof @__builtin_var_WorkgroupSize__ : !spv.ptr<vector<3xi32>, Input>
-    %31 = spv.Load "Input" %30 : vector<3xi32>
+    %31 = spv.Load <Input> %30 : vector<3xi32>
     %32 = spv.CompositeExtract %31[1 : i32] : vector<3xi32>
     %33 = spv.mlir.addressof @__builtin_var_WorkgroupSize__ : !spv.ptr<vector<3xi32>, Input>
-    %34 = spv.Load "Input" %33 : vector<3xi32>
+    %34 = spv.Load <Input> %33 : vector<3xi32>
     %35 = spv.CompositeExtract %34[2 : i32] : vector<3xi32>
     // CHECK: spv.IAdd [[ARG3]]
     %36 = spv.IAdd %arg3, %2 : i32
@@ -114,7 +114,7 @@ spv.module Logical GLSL450 {
     spv.Store "StorageBuffer" %43, %42 : f32
     spv.Return
   }
-  // CHECK: spv.EntryPoint "GLCompute" [[FN]], [[WORKGROUPID]], [[LOCALINVOCATIONID]], [[NUMWORKGROUPS]], [[WORKGROUPSIZE]]
+  // CHECK: spv.EntryPoint <GLCompute> [[FN]], [[WORKGROUPID]], [[LOCALINVOCATIONID]], [[NUMWORKGROUPS]], [[WORKGROUPSIZE]]
   // CHECK-NEXT: spv.ExecutionMode [[FN]] "LocalSize", 32, 1, 1
 } // end spv.module
 

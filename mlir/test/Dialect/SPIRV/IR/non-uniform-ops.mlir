@@ -94,16 +94,16 @@ func.func @group_non_uniform_elect() -> i1 {
 
 // CHECK-LABEL: @group_non_uniform_fadd_reduce
 func.func @group_non_uniform_fadd_reduce(%val: f32) -> f32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformFAdd "Workgroup" "Reduce" %{{.+}} : f32
-  %0 = spv.GroupNonUniformFAdd "Workgroup" "Reduce" %val : f32
+  // CHECK: %{{.+}} = spv.GroupNonUniformFAdd <Workgroup> "Reduce" %{{.+}} : f32
+  %0 = spv.GroupNonUniformFAdd <Workgroup> "Reduce" %val : f32
   return %0: f32
 }
 
 // CHECK-LABEL: @group_non_uniform_fadd_clustered_reduce
 func.func @group_non_uniform_fadd_clustered_reduce(%val: vector<2xf32>) -> vector<2xf32> {
   %four = spv.Constant 4 : i32
-  // CHECK: %{{.+}} = spv.GroupNonUniformFAdd "Workgroup" "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xf32>
-  %0 = spv.GroupNonUniformFAdd "Workgroup" "ClusteredReduce" %val cluster_size(%four) : vector<2xf32>
+  // CHECK: %{{.+}} = spv.GroupNonUniformFAdd <Workgroup> "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xf32>
+  %0 = spv.GroupNonUniformFAdd <Workgroup> "ClusteredReduce" %val cluster_size(%four) : vector<2xf32>
   return %0: vector<2xf32>
 }
 
@@ -113,16 +113,16 @@ func.func @group_non_uniform_fadd_clustered_reduce(%val: vector<2xf32>) -> vecto
 
 // CHECK-LABEL: @group_non_uniform_fmul_reduce
 func.func @group_non_uniform_fmul_reduce(%val: f32) -> f32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformFMul "Workgroup" "Reduce" %{{.+}} : f32
-  %0 = spv.GroupNonUniformFMul "Workgroup" "Reduce" %val : f32
+  // CHECK: %{{.+}} = spv.GroupNonUniformFMul <Workgroup> "Reduce" %{{.+}} : f32
+  %0 = spv.GroupNonUniformFMul <Workgroup> "Reduce" %val : f32
   return %0: f32
 }
 
 // CHECK-LABEL: @group_non_uniform_fmul_clustered_reduce
 func.func @group_non_uniform_fmul_clustered_reduce(%val: vector<2xf32>) -> vector<2xf32> {
   %four = spv.Constant 4 : i32
-  // CHECK: %{{.+}} = spv.GroupNonUniformFMul "Workgroup" "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xf32>
-  %0 = spv.GroupNonUniformFMul "Workgroup" "ClusteredReduce" %val cluster_size(%four) : vector<2xf32>
+  // CHECK: %{{.+}} = spv.GroupNonUniformFMul <Workgroup> "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xf32>
+  %0 = spv.GroupNonUniformFMul <Workgroup> "ClusteredReduce" %val cluster_size(%four) : vector<2xf32>
   return %0: vector<2xf32>
 }
 
@@ -134,8 +134,8 @@ func.func @group_non_uniform_fmul_clustered_reduce(%val: vector<2xf32>) -> vecto
 
 // CHECK-LABEL: @group_non_uniform_fmax_reduce
 func.func @group_non_uniform_fmax_reduce(%val: f32) -> f32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformFMax "Workgroup" "Reduce" %{{.+}} : f32
-  %0 = spv.GroupNonUniformFMax "Workgroup" "Reduce" %val : f32
+  // CHECK: %{{.+}} = spv.GroupNonUniformFMax <Workgroup> "Reduce" %{{.+}} : f32
+  %0 = spv.GroupNonUniformFMax <Workgroup> "Reduce" %val : f32
   return %0: f32
 }
 
@@ -147,8 +147,8 @@ func.func @group_non_uniform_fmax_reduce(%val: f32) -> f32 {
 
 // CHECK-LABEL: @group_non_uniform_fmin_reduce
 func.func @group_non_uniform_fmin_reduce(%val: f32) -> f32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformFMin "Workgroup" "Reduce" %{{.+}} : f32
-  %0 = spv.GroupNonUniformFMin "Workgroup" "Reduce" %val : f32
+  // CHECK: %{{.+}} = spv.GroupNonUniformFMin <Workgroup> "Reduce" %{{.+}} : f32
+  %0 = spv.GroupNonUniformFMin <Workgroup> "Reduce" %val : f32
   return %0: f32
 }
 
@@ -160,16 +160,16 @@ func.func @group_non_uniform_fmin_reduce(%val: f32) -> f32 {
 
 // CHECK-LABEL: @group_non_uniform_iadd_reduce
 func.func @group_non_uniform_iadd_reduce(%val: i32) -> i32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformIAdd "Workgroup" "Reduce" %{{.+}} : i32
-  %0 = spv.GroupNonUniformIAdd "Workgroup" "Reduce" %val : i32
+  // CHECK: %{{.+}} = spv.GroupNonUniformIAdd <Workgroup> "Reduce" %{{.+}} : i32
+  %0 = spv.GroupNonUniformIAdd <Workgroup> "Reduce" %val : i32
   return %0: i32
 }
 
 // CHECK-LABEL: @group_non_uniform_iadd_clustered_reduce
 func.func @group_non_uniform_iadd_clustered_reduce(%val: vector<2xi32>) -> vector<2xi32> {
   %four = spv.Constant 4 : i32
-  // CHECK: %{{.+}} = spv.GroupNonUniformIAdd "Workgroup" "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xi32>
-  %0 = spv.GroupNonUniformIAdd "Workgroup" "ClusteredReduce" %val cluster_size(%four) : vector<2xi32>
+  // CHECK: %{{.+}} = spv.GroupNonUniformIAdd <Workgroup> "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xi32>
+  %0 = spv.GroupNonUniformIAdd <Workgroup> "ClusteredReduce" %val cluster_size(%four) : vector<2xi32>
   return %0: vector<2xi32>
 }
 
@@ -185,7 +185,7 @@ func.func @group_non_uniform_iadd_reduce(%val: i32) -> i32 {
 
 func.func @group_non_uniform_iadd_clustered_reduce(%val: vector<2xi32>) -> vector<2xi32> {
   // expected-error @+1 {{cluster size operand must be provided for 'ClusteredReduce' group operation}}
-  %0 = spv.GroupNonUniformIAdd "Workgroup" "ClusteredReduce" %val : vector<2xi32>
+  %0 = spv.GroupNonUniformIAdd <Workgroup> "ClusteredReduce" %val : vector<2xi32>
   return %0: vector<2xi32>
 }
 
@@ -193,7 +193,7 @@ func.func @group_non_uniform_iadd_clustered_reduce(%val: vector<2xi32>) -> vecto
 
 func.func @group_non_uniform_iadd_clustered_reduce(%val: vector<2xi32>, %size: i32) -> vector<2xi32> {
   // expected-error @+1 {{cluster size operand must come from a constant op}}
-  %0 = spv.GroupNonUniformIAdd "Workgroup" "ClusteredReduce" %val cluster_size(%size) : vector<2xi32>
+  %0 = spv.GroupNonUniformIAdd <Workgroup> "ClusteredReduce" %val cluster_size(%size) : vector<2xi32>
   return %0: vector<2xi32>
 }
 
@@ -202,7 +202,7 @@ func.func @group_non_uniform_iadd_clustered_reduce(%val: vector<2xi32>, %size: i
 func.func @group_non_uniform_iadd_clustered_reduce(%val: vector<2xi32>) -> vector<2xi32> {
   %five = spv.Constant 5 : i32
   // expected-error @+1 {{cluster size operand must be a power of two}}
-  %0 = spv.GroupNonUniformIAdd "Workgroup" "ClusteredReduce" %val cluster_size(%five) : vector<2xi32>
+  %0 = spv.GroupNonUniformIAdd <Workgroup> "ClusteredReduce" %val cluster_size(%five) : vector<2xi32>
   return %0: vector<2xi32>
 }
 
@@ -214,16 +214,16 @@ func.func @group_non_uniform_iadd_clustered_reduce(%val: vector<2xi32>) -> vecto
 
 // CHECK-LABEL: @group_non_uniform_imul_reduce
 func.func @group_non_uniform_imul_reduce(%val: i32) -> i32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformIMul "Workgroup" "Reduce" %{{.+}} : i32
-  %0 = spv.GroupNonUniformIMul "Workgroup" "Reduce" %val : i32
+  // CHECK: %{{.+}} = spv.GroupNonUniformIMul <Workgroup> "Reduce" %{{.+}} : i32
+  %0 = spv.GroupNonUniformIMul <Workgroup> "Reduce" %val : i32
   return %0: i32
 }
 
 // CHECK-LABEL: @group_non_uniform_imul_clustered_reduce
 func.func @group_non_uniform_imul_clustered_reduce(%val: vector<2xi32>) -> vector<2xi32> {
   %four = spv.Constant 4 : i32
-  // CHECK: %{{.+}} = spv.GroupNonUniformIMul "Workgroup" "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xi32>
-  %0 = spv.GroupNonUniformIMul "Workgroup" "ClusteredReduce" %val cluster_size(%four) : vector<2xi32>
+  // CHECK: %{{.+}} = spv.GroupNonUniformIMul <Workgroup> "ClusteredReduce" %{{.+}} cluster_size(%{{.+}}) : vector<2xi32>
+  %0 = spv.GroupNonUniformIMul <Workgroup> "ClusteredReduce" %val cluster_size(%four) : vector<2xi32>
   return %0: vector<2xi32>
 }
 
@@ -235,8 +235,8 @@ func.func @group_non_uniform_imul_clustered_reduce(%val: vector<2xi32>) -> vecto
 
 // CHECK-LABEL: @group_non_uniform_smax_reduce
 func.func @group_non_uniform_smax_reduce(%val: i32) -> i32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformSMax "Workgroup" "Reduce" %{{.+}} : i32
-  %0 = spv.GroupNonUniformSMax "Workgroup" "Reduce" %val : i32
+  // CHECK: %{{.+}} = spv.GroupNonUniformSMax <Workgroup> "Reduce" %{{.+}} : i32
+  %0 = spv.GroupNonUniformSMax <Workgroup> "Reduce" %val : i32
   return %0: i32
 }
 
@@ -248,8 +248,8 @@ func.func @group_non_uniform_smax_reduce(%val: i32) -> i32 {
 
 // CHECK-LABEL: @group_non_uniform_smin_reduce
 func.func @group_non_uniform_smin_reduce(%val: i32) -> i32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformSMin "Workgroup" "Reduce" %{{.+}} : i32
-  %0 = spv.GroupNonUniformSMin "Workgroup" "Reduce" %val : i32
+  // CHECK: %{{.+}} = spv.GroupNonUniformSMin <Workgroup> "Reduce" %{{.+}} : i32
+  %0 = spv.GroupNonUniformSMin <Workgroup> "Reduce" %val : i32
   return %0: i32
 }
 
@@ -261,8 +261,8 @@ func.func @group_non_uniform_smin_reduce(%val: i32) -> i32 {
 
 // CHECK-LABEL: @group_non_uniform_umax_reduce
 func.func @group_non_uniform_umax_reduce(%val: i32) -> i32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformUMax "Workgroup" "Reduce" %{{.+}} : i32
-  %0 = spv.GroupNonUniformUMax "Workgroup" "Reduce" %val : i32
+  // CHECK: %{{.+}} = spv.GroupNonUniformUMax <Workgroup> "Reduce" %{{.+}} : i32
+  %0 = spv.GroupNonUniformUMax <Workgroup> "Reduce" %val : i32
   return %0: i32
 }
 
@@ -274,7 +274,7 @@ func.func @group_non_uniform_umax_reduce(%val: i32) -> i32 {
 
 // CHECK-LABEL: @group_non_uniform_umin_reduce
 func.func @group_non_uniform_umin_reduce(%val: i32) -> i32 {
-  // CHECK: %{{.+}} = spv.GroupNonUniformUMin "Workgroup" "Reduce" %{{.+}} : i32
-  %0 = spv.GroupNonUniformUMin "Workgroup" "Reduce" %val : i32
+  // CHECK: %{{.+}} = spv.GroupNonUniformUMin <Workgroup> "Reduce" %{{.+}} : i32
+  %0 = spv.GroupNonUniformUMin <Workgroup> "Reduce" %val : i32
   return %0: i32
 }

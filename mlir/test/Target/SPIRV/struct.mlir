@@ -46,7 +46,7 @@ spv.module Logical GLSL450 requires #spv.vce<v1.0, [Shader], []> {
 
   // CHECK: !spv.ptr<!spv.struct<(!spv.array<128 x f32, stride=4> [0])>, Input>,
   // CHECK-SAME: !spv.ptr<!spv.struct<(!spv.array<128 x f32, stride=4> [0])>, Output>
-  spv.func @kernel(%arg0: !spv.ptr<!spv.struct<(!spv.array<128 x f32, stride=4> [0])>, Input>, %arg1: !spv.ptr<!spv.struct<(!spv.array<128 x f32, stride=4> [0])>, Output>) -> () "None" {
+  spv.func @kernel(%arg0: !spv.ptr<!spv.struct<(!spv.array<128 x f32, stride=4> [0])>, Input>, %arg1: !spv.ptr<!spv.struct<(!spv.array<128 x f32, stride=4> [0])>, Output>) -> () <None> {
     spv.Return
   }
 }

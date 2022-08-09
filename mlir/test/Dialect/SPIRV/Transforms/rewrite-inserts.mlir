@@ -1,7 +1,7 @@
 // RUN: mlir-opt -spirv-rewrite-inserts -split-input-file -verify-diagnostics %s -o - | FileCheck %s
 
 spv.module Logical GLSL450 {
-  spv.func @rewrite(%value0 : f32, %value1 : f32, %value2 : f32, %value3 : i32, %value4: !spv.array<3xf32>) -> vector<3xf32> "None" {
+  spv.func @rewrite(%value0 : f32, %value1 : f32, %value2 : f32, %value3 : i32, %value4: !spv.array<3xf32>) -> vector<3xf32> <None> {
     %0 = spv.Undef : vector<3xf32>
     // CHECK: spv.CompositeConstruct {{%.*}}, {{%.*}}, {{%.*}} : (f32, f32, f32) -> vector<3xf32>
     %1 = spv.CompositeInsert %value0, %0[0 : i32] : f32 into vector<3xf32>

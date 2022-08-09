@@ -5,14 +5,14 @@
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: @composite_extract_array
-spv.func @composite_extract_array(%arg: !spv.array<4x!spv.array<4xf32>>) "None" {
+spv.func @composite_extract_array(%arg: !spv.array<4x!spv.array<4xf32>>) <None> {
   // CHECK: llvm.extractvalue %{{.*}}[1 : i32, 3 : i32] : !llvm.array<4 x array<4 x f32>>
   %0 = spv.CompositeExtract %arg[1 : i32, 3 : i32] : !spv.array<4x!spv.array<4xf32>>
   spv.Return
 }
 
 // CHECK-LABEL: @composite_extract_vector
-spv.func @composite_extract_vector(%arg: vector<3xf32>) "None" {
+spv.func @composite_extract_vector(%arg: vector<3xf32>) <None> {
   // CHECK: %[[ZERO:.*]] = llvm.mlir.constant(0 : i32) : i32
   // CHECK: llvm.extractelement %{{.*}}[%[[ZERO]] : i32] : vector<3xf32>
   %0 = spv.CompositeExtract %arg[0 : i32] : vector<3xf32>
@@ -24,14 +24,14 @@ spv.func @composite_extract_vector(%arg: vector<3xf32>) "None" {
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: @composite_insert_struct
-spv.func @composite_insert_struct(%arg0: i32, %arg1: !spv.struct<(f32, !spv.array<4xi32>)>) "None" {
+spv.func @composite_insert_struct(%arg0: i32, %arg1: !spv.struct<(f32, !spv.array<4xi32>)>) <None> {
   // CHECK: llvm.insertvalue %{{.*}}, %{{.*}}[1 : i32, 3 : i32] : !llvm.struct<packed (f32, array<4 x i32>)>
   %0 = spv.CompositeInsert %arg0, %arg1[1 : i32, 3 : i32] : i32 into !spv.struct<(f32, !spv.array<4xi32>)>
   spv.Return
 }
 
 // CHECK-LABEL: @composite_insert_vector
-spv.func @composite_insert_vector(%arg0: vector<3xf32>, %arg1: f32) "None" {
+spv.func @composite_insert_vector(%arg0: vector<3xf32>, %arg1: f32) <None> {
   // CHECK: %[[ONE:.*]] = llvm.mlir.constant(1 : i32) : i32
   // CHECK: llvm.insertelement %{{.*}}, %{{.*}}[%[[ONE]] : i32] : vector<3xf32>
   %0 = spv.CompositeInsert %arg1, %arg0[1 : i32] : f32 into vector<3xf32>
@@ -43,7 +43,7 @@ spv.func @composite_insert_vector(%arg0: vector<3xf32>, %arg1: f32) "None" {
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: @select_scalar
-spv.func @select_scalar(%arg0: i1, %arg1: vector<3xi32>, %arg2: f32) "None" {
+spv.func @select_scalar(%arg0: i1, %arg1: vector<3xi32>, %arg2: f32) <None> {
   // CHECK: llvm.select %{{.*}}, %{{.*}}, %{{.*}} : i1, vector<3xi32>
   %0 = spv.Select %arg0, %arg1, %arg1 : i1, vector<3xi32>
   // CHECK: llvm.select %{{.*}}, %{{.*}}, %{{.*}} : i1, f32
@@ -52,7 +52,7 @@ spv.func @select_scalar(%arg0: i1, %arg1: vector<3xi32>, %arg2: f32) "None" {
 }
 
 // CHECK-LABEL: @select_vector
-spv.func @select_vector(%arg0: vector<2xi1>, %arg1: vector<2xi32>) "None" {
+spv.func @select_vector(%arg0: vector<2xi1>, %arg1: vector<2xi32>) <None> {
   // CHECK: llvm.select %{{.*}}, %{{.*}}, %{{.*}} : vector<2xi1>, vector<2xi32>
   %0 = spv.Select %arg0, %arg1, %arg1 : vector<2xi1>, vector<2xi32>
   spv.Return
@@ -62,14 +62,14 @@ spv.func @select_vector(%arg0: vector<2xi1>, %arg1: vector<2xi32>) "None" {
 // spv.VectorShuffle
 //===----------------------------------------------------------------------===//
 
-spv.func @vector_shuffle_same_size(%vector1: vector<2xf32>, %vector2: vector<2xf32>) -> vector<3xf32> "None" {
+spv.func @vector_shuffle_same_size(%vector1: vector<2xf32>, %vector2: vector<2xf32>) -> vector<3xf32> <None> {
   //      CHECK: %[[res:.*]] = llvm.shufflevector {{.*}} [0 : i32, 2 : i32, -1 : i32] : vector<2xf32>, vector<2xf32>
   // CHECK-NEXT: return %[[res]] : vector<3xf32>
   %0 = spv.VectorShuffle [0: i32, 2: i32, 0xffffffff: i32] %vector1: vector<2xf32>, %vector2: vector<2xf32> -> vector<3xf32>
   spv.ReturnValue %0: vector<3xf32>
 }
 
-spv.func @vector_shuffle_different_size(%vector1: vector<3xf32>, %vector2: vector<2xf32>) -> vector<3xf32> "None" {
+spv.func @vector_shuffle_different_size(%vector1: vector<3xf32>, %vector2: vector<2xf32>) -> vector<3xf32> <None> {
   //      CHECK: %[[UNDEF:.*]] = llvm.mlir.undef : vector<3xf32>
   // CHECK-NEXT: %[[C0_0:.*]] = llvm.mlir.constant(0 : i32) : i32
   // CHECK-NEXT: %[[C0_1:.*]] = llvm.mlir.constant(0 : i32) : i32
@@ -100,7 +100,7 @@ spv.func @vector_shuffle_different_size(%vector1: vector<3xf32>, %vector2: vecto
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 spv.module Logical OpenCL {
-  spv.func @empty() "None" {
+  spv.func @empty() <None> {
     spv.Return
   }
   spv.EntryPoint "Kernel" @empty
@@ -126,7 +126,7 @@ spv.module Logical OpenCL {
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 spv.module Logical OpenCL {
-  spv.func @bar() "None" {
+  spv.func @bar() <None> {
     spv.Return
   }
   spv.EntryPoint "Kernel" @bar
@@ -139,14 +139,14 @@ spv.module Logical OpenCL {
 //===----------------------------------------------------------------------===//
 
 // CHECK-LABEL: @undef_scalar
-spv.func @undef_scalar() "None" {
+spv.func @undef_scalar() <None> {
   // CHECK: llvm.mlir.undef : f32
   %0 = spv.Undef : f32
   spv.Return
 }
 
 // CHECK-LABEL: @undef_vector
-spv.func @undef_vector() "None" {
+spv.func @undef_vector() <None> {
   // CHECK: llvm.mlir.undef : vector<2xi32>
   %0 = spv.Undef : vector<2xi32>
   spv.Return

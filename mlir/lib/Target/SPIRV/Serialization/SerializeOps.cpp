@@ -276,12 +276,12 @@ LogicalResult Serializer::processVariableOp(spirv::VariableOp op) {
   resultID = getNextID();
   valueIDMap[op.getResult()] = resultID;
   operands.push_back(resultID);
-  auto attr = op->getAttr(spirv::attributeName<spirv::StorageClass>());
+  auto attr = op->getAttr(spirv::StorageClassAttr::getMnemonic());
   if (attr) {
     operands.push_back(
         static_cast<uint32_t>(attr.cast<spirv::StorageClassAttr>().getValue()));
   }
-  elidedAttrs.push_back(spirv::attributeName<spirv::StorageClass>());
+  elidedAttrs.push_back(spirv::StorageClassAttr::getMnemonic());
   for (auto arg : op.getODSOperands(0)) {
     auto argID = getValueID(arg);
     if (!argID) {

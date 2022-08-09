@@ -9,7 +9,7 @@
 // CHECK-NEXT:     spv.func @no_op
 // CHECK-NEXT:       spv.Return
 // CHECK-NEXT:     }
-// CHECK-NEXT:     spv.EntryPoint "GLCompute" @no_op
+// CHECK-NEXT:     spv.EntryPoint <GLCompute> @no_op
 // CHECK-NEXT:     spv.ExecutionMode @no_op "LocalSize", 32, 1, 1
 
 // CHECK-NEXT:     spv.SpecConstant @m2_sc
@@ -26,17 +26,17 @@ module {
 spv.module Logical GLSL450 {
   spv.SpecConstant @m1_sc = 42.42 : f32
   spv.GlobalVariable @m1_gv bind(1, 0): !spv.ptr<f32, Input>
-  spv.func @no_op() -> () "None" {
+  spv.func @no_op() -> () <None> {
     spv.Return
   }
-  spv.EntryPoint "GLCompute" @no_op
+  spv.EntryPoint <GLCompute> @no_op
   spv.ExecutionMode @no_op "LocalSize", 32, 1, 1
 }
 
 spv.module Logical GLSL450 {
   spv.SpecConstant @m2_sc = 42 : i32
   spv.GlobalVariable @m2_gv bind(0, 1): !spv.ptr<f32, Input>
-  spv.func @variable_init_spec_constant() -> () "None" {
+  spv.func @variable_init_spec_constant() -> () <None> {
     %0 = spv.mlir.referenceof @m2_sc : i32
     %1 = spv.Variable init(%0) : !spv.ptr<i32, Function>
     spv.Return
