@@ -340,6 +340,9 @@ void populateVectorUnrollPatterns(RewritePatternSet &patterns,
                                   const UnrollVectorOptions &options,
                                   PatternBenefit benefit = 1);
 
+void populateVectorReorderTransferExtractInsertSlicePatterns(
+    RewritePatternSet &patterns, PatternBenefit benefit = 1);
+
 //===----------------------------------------------------------------------===//
 // Finer-grained patterns exposed for more control over individual lowerings.
 //===----------------------------------------------------------------------===//
