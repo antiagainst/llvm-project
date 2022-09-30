@@ -1460,95 +1460,122 @@ struct Conv1DGenerator : public StructuredGenerator<LinalgOp> {
     Value res = builder.create<vector::TransferReadOp>(
         loc, resType, resShaped, ValueRange{zero, zero, zero});
 
-    // The base vectorization case is input: {n,w,c}, weight: {kw,c,f}, output:
-    // {n,w,f}. To reuse the base pattern vectorization case, we do pre
-    // transpose on input, weight, and output.
-    switch (conv1DOpOrder) {
-    case Conv1DOpOrder::Nwc:
-      // Base case, so no transposes necessary.
-      break;
-    case Conv1DOpOrder::Ncw: {
-      // To match base vectorization case, we pre-transpose current case.
-      // ncw -> nwc
-      static constexpr std::array<int64_t, 3> permLhs = {0, 2, 1};
-      lhs = builder.create<vector::TransposeOp>(loc, lhs, permLhs);
-      // fcw -> wcf
-      static constexpr std::array<int64_t, 3> permRhs = {2, 1, 0};
-      rhs = builder.create<vector::TransposeOp>(loc, rhs, permRhs);
-      // nfw -> nwf
-      static constexpr std::array<int64_t, 3> permRes = {0, 2, 1};
-      res = builder.create<vector::TransposeOp>(loc, res, permRes);
-      break;
-    }
-    }
-
     //===------------------------------------------------------------------===//
     // Begin vector-only rewrite part
     //===------------------------------------------------------------------===//
-    // Unroll along kw and read slices of lhs and rhs.
-    SmallVector<Value> lhsVals, rhsVals, resVals;
-    // Extract lhs slice of size {n, wSizeStep, c} @ [0, sw * w + dw * kw, 0].
-    for (int64_t kw = 0; kw < kwSize; ++kw) {
+    switch (conv1DOpOrder) {
+    case Conv1DOpOrder::Nwc: {
+
+      // Unroll along kw and read slices of lhs and rhs.
+      SmallVector<Value> lhsVals, rhsVals, resVals;
+      // Extract lhs slice of size {n, wSizeStep, c} @ [0, sw * w + dw * kw, 0].
+      for (int64_t kw = 0; kw < kwSize; ++kw) {
+        for (int64_t w = 0; w < wSize; w += wSizeStep) {
+          lhsVals.push_back(builder.create<vector::ExtractStridedSliceOp>(
+              loc, lhs,
+              /*offsets=*/ArrayRef<int64_t>{0, w * strideW + kw * dilationW, 0},
+              /*sizes=*/ArrayRef<int64_t>{nSize, wSizeStep, cSize},
+              /*strides=*/ArrayRef<int64_t>{1, 1, 1}));
+        }
+      }
+      // Extract rhs slice of size {c, f} @ [kw].
+      for (int64_t kw = 0; kw < kwSize; ++kw) {
+        rhsVals.push_back(builder.create<vector::ExtractOp>(
+            loc, rhs, /*offsets=*/ArrayRef<int64_t>{kw}));
+      }
+      // Extract res slice: {n, wSizeStep, f} @ [0, w, 0].
       for (int64_t w = 0; w < wSize; w += wSizeStep) {
-        lhsVals.push_back(builder.create<vector::ExtractStridedSliceOp>(
-            loc, lhs,
-            /*offsets=*/ArrayRef<int64_t>{0, w * strideW + kw * dilationW, 0},
-            /*sizes=*/ArrayRef<int64_t>{nSize, wSizeStep, cSize},
+        resVals.push_back(builder.create<vector::ExtractStridedSliceOp>(
+            loc, res,
+            /*offsets=*/ArrayRef<int64_t>{0, w, 0},
+            /*sizes=*/ArrayRef<int64_t>{nSize, wSizeStep, fSize},
             /*strides=*/ArrayRef<int64_t>{1, 1, 1}));
       }
-    }
-    // Extract rhs slice of size {c, f} @ [kw].
-    for (int64_t kw = 0; kw < kwSize; ++kw) {
-      rhsVals.push_back(builder.create<vector::ExtractOp>(
-          loc, rhs, /*offsets=*/ArrayRef<int64_t>{kw}));
-    }
-    // Extract res slice: {n, wSizeStep, f} @ [0, w, 0].
-    for (int64_t w = 0; w < wSize; w += wSizeStep) {
-      resVals.push_back(builder.create<vector::ExtractStridedSliceOp>(
-          loc, res,
-          /*offsets=*/ArrayRef<int64_t>{0, w, 0},
-          /*sizes=*/ArrayRef<int64_t>{nSize, wSizeStep, fSize},
-          /*strides=*/ArrayRef<int64_t>{1, 1, 1}));
-    }
 
-    auto linearIndex = [&](int64_t kw, int64_t w) {
-      return kw * (wSize / wSizeStep) + w;
-    };
+      auto linearIndex = [&](int64_t kw, int64_t w) {
+        return kw * (wSize / wSizeStep) + w;
+      };
 
-    // Compute contraction: O{n, w, f} += I{n, sw * w + dw * kw, c} * F{c, f}
-    for (int64_t kw = 0; kw < kwSize; ++kw) {
+      // Compute contraction: O{n, w, f} += I{n, sw * w + dw * kw, c} * F{c, f}
+      for (int64_t kw = 0; kw < kwSize; ++kw) {
+        for (int64_t w = 0; w < wSize; w += wSizeStep) {
+          resVals[w] = conv1dSliceAsContraction(builder, loc,
+                                                lhsVals[linearIndex(kw, w)],
+                                                rhsVals[kw], resVals[w]);
+        }
+      }
+
+      // Write back res slice: {n, wSizeStep, f} @ [0, w, 0].
+      // This does not depend on kw.
       for (int64_t w = 0; w < wSize; w += wSizeStep) {
-        resVals[w] = conv1dSliceAsContraction(
-            builder, loc, lhsVals[linearIndex(kw, w)], rhsVals[kw], resVals[w]);
+        res = builder.create<vector::InsertStridedSliceOp>(
+            loc, resVals[w], res,
+            /*offsets=*/ArrayRef<int64_t>{0, w, 0},
+            /*strides=*/ArrayRef<int64_t>{1, 1, 1});
       }
     }
+    case Conv1DOpOrder::Ncw: {
+      // Unroll along kw and read slices of lhs and rhs.
+      SmallVector<Value> lhsVals, rhsVals, resVals;
+      // Extract lhs slice of size {n, c, wSizeStep} @ [0, 0, sw * w + dw * kw].
+      for (int64_t kw = 0; kw < kwSize; ++kw) {
+        for (int64_t w = 0; w < wSize; w += wSizeStep) {
+          lhsVals.push_back(builder.create<vector::ExtractStridedSliceOp>(
+              loc, lhs,
+              /*offsets=*/ArrayRef<int64_t>{0, 0, w * strideW + kw * dilationW},
+              /*sizes=*/ArrayRef<int64_t>{nSize, cSize, wSizeStep},
+              /*strides=*/ArrayRef<int64_t>{1, 1, 1}));
+        }
+      }
+      // Extract rhs slice of size {f, c, 1} @ [0, 0, kw].
+      for (int64_t kw = 0; kw < kwSize; ++kw) {
+        rhsVals.push_back(builder.create<vector::ExtractStridedSliceOp>(
+            loc, rhs,
+            /*offsets=*/ArrayRef<int64_t>{0, 0, kw},
+            /*sizes=*/ArrayRef<int64_t>{fSize, cSize, 1},
+            /*strides=*/ArrayRef<int64_t>{1, 1, 1}));
+      }
+      // Extract res slice: {n, f, wSizeStep} @ [0, 0, w].
+      for (int64_t w = 0; w < wSize; w += wSizeStep) {
+        auto val = builder.create<vector::ExtractStridedSliceOp>(
+            loc, res,
+            /*offsets=*/ArrayRef<int64_t>{0, 0, w},
+            /*sizes=*/ArrayRef<int64_t>{nSize, fSize, wSizeStep},
+            /*strides=*/ArrayRef<int64_t>{1, 1, 1});
+        Type bcType = VectorType::get({1, nSize, fSize, wSize}, resEltType);
+        resVals.push_back(
+            builder.create<vector::BroadcastOp>(loc, bcType, val));
+      }
 
-    // Write back res slice: {n, wSizeStep, f} @ [0, w, 0].
-    // This does not depend on kw.
-    for (int64_t w = 0; w < wSize; w += wSizeStep) {
-      res = builder.create<vector::InsertStridedSliceOp>(
-          loc, resVals[w], res,
-          /*offsets=*/ArrayRef<int64_t>{0, w, 0},
-          /*strides=*/ArrayRef<int64_t>{1, 1, 1});
+      auto linearIndex = [&](int64_t kw, int64_t w) {
+        return kw * (wSize / wSizeStep) + w;
+      };
+
+      // Compute contraction: O{n, f, w} += I{n, c, sw * w + dw * kw} * F{f, c,
+      // 1}
+      for (int64_t kw = 0; kw < kwSize; ++kw) {
+        for (int64_t w = 0; w < wSize; w += wSizeStep) {
+          auto val = conv1dSliceAsContractionNcw(builder, loc,
+                                                 lhsVals[linearIndex(kw, w)],
+                                                 rhsVals[kw], resVals[w]);
+          resVals[w] = builder.create<vector::ExtractOp>(
+              loc, val, /*offsets=*/ArrayRef<int64_t>{0});
+        }
+      }
+
+      // Write back res slice: {n, f, SizeStep} @ [0, 0, w].
+      // This does not depend on kw.
+      for (int64_t w = 0; w < wSize; w += wSizeStep) {
+        res = builder.create<vector::InsertStridedSliceOp>(
+            loc, resVals[w], res,
+            /*offsets=*/ArrayRef<int64_t>{0, 0, w},
+            /*strides=*/ArrayRef<int64_t>{1, 1, 1});
+      }
+    }
     }
     //===------------------------------------------------------------------===//
     // End vector-only rewrite part
     //===------------------------------------------------------------------===//
-
-    // The base vectorization case is output: {n,w,f}
-    // To reuse the result from base pattern vectorization case, we post
-    // transpose the base case result.
-    switch (conv1DOpOrder) {
-    case Conv1DOpOrder::Nwc:
-      // Base case, so no transposes necessary.
-      break;
-    case Conv1DOpOrder::Ncw: {
-      // nwf -> nfw
-      static constexpr std::array<int64_t, 3> perm = {0, 2, 1};
-      res = builder.create<vector::TransposeOp>(loc, res, perm);
-      break;
-    }
-    }
 
     // Write back res slice of size {n, w, f} @ [0, 0, 0].
     return builder
@@ -1568,6 +1595,20 @@ struct Conv1DGenerator : public StructuredGenerator<LinalgOp> {
         loc, lhs, rhs, res,
         /*indexingMaps=*/MapList{{n, w, c}, {c, f}, {n, w, f}},
         /*iteratorTypes=*/ArrayRef<vector::IteratorType>{par, par, par, red});
+  }
+
+  // Create a contraction: lhs{n, c, w} * rhs{f, c, 1} -> res{1, n, f, w}
+  Value conv1dSliceAsContractionNcw(OpBuilder &b, Location loc, Value lhs,
+                                    Value rhs, Value res) {
+    vector::IteratorType par = vector::IteratorType::parallel;
+    vector::IteratorType red = vector::IteratorType::reduction;
+    AffineExpr one, n, f, w, c;
+    bindDims(ctx, one, n, f, w, c);
+    return builder.create<vector::ContractionOp>(
+        loc, lhs, rhs, res,
+        /*indexingMaps=*/MapList{{n, c, w}, {f, c, one}, {one, n, f, w}},
+        /*iteratorTypes=*/
+        ArrayRef<vector::IteratorType>{par, par, par, par, red});
   }
 
   /// Generate a vector implementation for:
