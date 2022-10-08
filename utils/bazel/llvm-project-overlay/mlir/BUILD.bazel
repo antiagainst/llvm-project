@@ -5226,6 +5226,7 @@ cc_library(
         ":MemRefDialect",
         ":Pass",
         ":SCFDialect",
+        ":SCFUtils",
         ":TensorDialect",
         ":TensorPassIncGen",
         ":TilingInterface",
