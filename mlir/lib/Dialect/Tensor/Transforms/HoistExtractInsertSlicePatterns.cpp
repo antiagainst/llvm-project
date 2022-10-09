@@ -149,6 +149,30 @@ static scf::ForOp hoistExtractInsertSlice(scf::ForOp forOp, unsigned index,
   return newForOp;
 }
 
+/// Collects and appends all children insert_slice ops from the given `seedOp`
+/// into `insertOps`, and returns true if the insert_slice op chain rooting from
+/// `seeOp` does not have other users than scf.yield ops.
+static bool collectInsertSliceChain(InsertSliceOp seedOp,
+                                    SmallVectorImpl<InsertSliceOp> &insertOps) {
+  SmallVector<InsertSliceOp> worklist;
+  worklist.push_back(seedOp);
+  while (!worklist.empty()) {
+    InsertSliceOp insertOp = worklist.pop_back_val();
+    insertOps.push_back(insertOp);
+    for (Operation *user : insertOp.getResult().getUsers()) {
+      if (auto userOp = dyn_cast<InsertSliceOp>(user)) {
+        worklist.push_back(userOp);
+      } else if (!isa<scf::YieldOp>(user)) {
+        LLVM_DEBUG(llvm::dbgs()
+                   << "non extract/insert slice user of loop carried value: "
+                   << *user << "\n");
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 /// Hoists extract/insert slice ops that are users of the `index`-th loop
 /// carried value out of the given `forOp`. Returns the new scf.for op on
 /// success; returns nullptr otherwise.
@@ -168,19 +192,8 @@ static scf::ForOp hoistLoopCarriedValueUses(scf::ForOp forOp, unsigned index,
       continue;
     }
     if (auto op = dyn_cast<InsertSliceOp>(user)) {
-      insertOps.push_back(op);
-      // Collect all subsequent insert_slice users to allow a chain of them
-      // building upon on another. The last one should be used by loop yield.
-      for (Operation *insertUser : op.getResult().getUsers()) {
-        if (auto iOp = dyn_cast<InsertSliceOp>(insertUser)) {
-          insertOps.push_back(iOp);
-        } else if (!isa<scf::YieldOp>(insertUser)) {
-          LLVM_DEBUG(llvm::dbgs()
-                     << "non extract/insert slice user of loop carried value: "
-                     << *insertUser << "\n");
-          return nullptr;
-        }
-      }
+      if (!collectInsertSliceChain(op, insertOps))
+        return nullptr;
       continue;
     }
     LLVM_DEBUG(llvm::dbgs()
