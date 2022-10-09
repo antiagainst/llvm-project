@@ -12,6 +12,7 @@
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "mlir/Dialect/Tensor/Transforms/Transforms.h"
 #include "mlir/Dialect/Utils/StaticValueUtils.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/PatternMatch.h"
 #include "llvm/Support/Debug.h"
 
@@ -122,11 +123,15 @@ findMatchingExtractSlice(InsertSliceOp insertOp,
   return extractOp;
 }
 
+using ForOpEraseFn = std::function<void(scf::ForOp)>;
+
 /// Hoists the `extractOp` and `insertOp` pair that updates the `index`-th loop
 /// carried value out of the given `forOp` and returns the new scf.for op.
 static scf::ForOp hoistExtractInsertSlice(scf::ForOp forOp, unsigned index,
                                           ExtractSliceOp extractOp,
-                                          InsertSliceOp insertOp) {
+                                          InsertSliceOp insertOp,
+                                          OpBuilder &builder,
+                                          const ForOpEraseFn &forOpEraseFn) {
   // Update the extract_slice op's source and move it out.
   extractOp.getSourceMutable().assign(forOp.getInitArgs()[index]);
   forOp.moveOutOfLoop(extractOp);
@@ -137,7 +142,8 @@ static scf::ForOp hoistExtractInsertSlice(scf::ForOp forOp, unsigned index,
   insertOp->moveAfter(forOp);
 
   // Build a new loop to additionally yield the insert_slice op's source.
-  OpBuilder builder(forOp);
+  OpBuilder::InsertionGuard guard(builder);
+  builder.setInsertionPoint(forOp);
   NewYieldValueFn yieldFn = [&](OpBuilder &, Location,
                                 ArrayRef<BlockArgument>) {
     return SmallVector<Value>{insertOp.getSource()};
@@ -151,7 +157,7 @@ static scf::ForOp hoistExtractInsertSlice(scf::ForOp forOp, unsigned index,
   insertOp.getSourceMutable().assign(newForOp.getResults().back());
   insertOp.getDestMutable().assign(newForOp.getResult(index));
 
-  forOp.erase();
+  forOpEraseFn(forOp);
   return newForOp;
 }
 
@@ -159,7 +165,8 @@ static scf::ForOp hoistExtractInsertSlice(scf::ForOp forOp, unsigned index,
 /// carried value out of the given `forOp`. Returns the new scf.for op on
 /// success; returns nullptr otherwise.
 static scf::ForOp hoistLoopCarriedValueUses(scf::ForOp forOp, unsigned index,
-                                            PatternRewriter &rewriter) {
+                                            OpBuilder &builder,
+                                            const ForOpEraseFn &forOpEraseFn) {
   Value loopValue = forOp.getRegionIterArgs()[index];
   LLVM_DEBUG(llvm::dbgs() << "inspecting loop value #" << index << "\n");
   // Make sure the users of the loop carried value is all insert/extract
@@ -182,7 +189,24 @@ static scf::ForOp hoistLoopCarriedValueUses(scf::ForOp forOp, unsigned index,
   if (!extractOp)
     return nullptr;
 
-  return hoistExtractInsertSlice(forOp, index, extractOp, insertOp);
+  return hoistExtractInsertSlice(forOp, index, extractOp, insertOp, builder,
+                                 forOpEraseFn);
+}
+
+scf::ForOp tensor::hoistTensorExtractInsertSliceOps(scf::ForOp forOp,
+                                                    OpBuilder &builder) {
+  auto eraseFn = [](scf::ForOp forOp) { forOp->erase(); };
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    for (unsigned i = 0; i < forOp.getNumRegionIterArgs(); ++i)
+      if (auto newOp = hoistLoopCarriedValueUses(forOp, i, builder, eraseFn)) {
+        forOp = newOp; // Use the new scf.for op for next iteration
+        changed = true;
+        break;
+      }
+  };
+  return forOp;
 }
 
 namespace {
@@ -198,8 +222,9 @@ struct HoistExtractInsertSlice : OpRewritePattern<scf::ForOp> {
 
   LogicalResult matchAndRewrite(scf::ForOp forOp,
                                 PatternRewriter &rewriter) const override {
+    auto eraseFn = [&](scf::ForOp op) { rewriter.eraseOp(op); };
     for (unsigned i = 0; i < forOp.getNumRegionIterArgs(); ++i)
-      if (hoistLoopCarriedValueUses(forOp, i, rewriter))
+      if (hoistLoopCarriedValueUses(forOp, i, rewriter, eraseFn))
         return success();
     return failure();
   }
