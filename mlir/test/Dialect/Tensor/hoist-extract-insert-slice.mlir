@@ -165,7 +165,45 @@ func.func @dont_hoist_loop_dependent_slice_parameters(
 
 // -----
 
-func.func @dont_hoist_slices_not_disjoint(
+func.func @dont_hoist_out_of_dependent_loops(
+    %input: tensor<1x9x9x3xf32>, %filter: tensor<3x3x3x16xf32>, %init: tensor<1x2x2x4xf32>,
+    %offset0: index, %offset1: index, %offset2: index) -> tensor<1x2x2x4xf32> {
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %c3 = arith.constant 3 : index
+  %output = scf.for %iv = %c0 to %c2 step %c1 iter_args(%arg = %init) -> (tensor<1x2x2x4xf32>) {
+    %0 = scf.for %iv0 = %c0 to %c3 step %c1 iter_args(%arg0 = %arg) -> (tensor<1x2x2x4xf32>) {
+      %1 = scf.for %iv1 = %c0 to %c3 step %c1 iter_args(%arg1 = %arg0) -> (tensor<1x2x2x4xf32>) {
+        %2 = affine.apply affine_map<(d0, d1) -> (d0 * 2 + d1)>(%offset0, %iv0)
+        %3 = affine.apply affine_map<(d0, d1) -> (d0 * 2 + d1)>(%offset1, %iv1)
+        %4 = tensor.extract_slice %input[%c0, %2, %3, %c0] [1, 1, 3, 3] [1, 1, 1, 1] : tensor<1x9x9x3xf32> to tensor<1x3x3xf32>
+        %5 = tensor.extract_slice %filter[%iv0, %iv1, %c0, %offset2] [1, 1, 3, 4] [1, 1, 1, 1] : tensor<3x3x3x16xf32> to tensor<1x3x4xf32>
+        %6 = tensor.extract_slice %arg1[%c0, %iv, %c0, %c0] [1, 1, 2, 4] [1, 1, 1, 1] : tensor<1x2x2x4xf32> to tensor<1x2x4xf32>
+        %7 = linalg.conv_1d_nwc_wcf {dilations = dense<1> : vector<1xi64>, strides = dense<2> : vector<1xi64>}
+              ins(%4, %5 : tensor<1x3x3xf32>, tensor<1x3x4xf32>) outs(%6 : tensor<1x2x4xf32>) -> tensor<1x2x4xf32>
+        %8 = tensor.insert_slice %7 into %arg1[0, %iv, 0, 0] [1, 1, 2, 4] [1, 1, 1, 1] : tensor<1x2x4xf32> into tensor<1x2x2x4xf32>
+        scf.yield %8 : tensor<1x2x2x4xf32>
+      }
+      scf.yield %1 : tensor<1x2x2x4xf32>
+    }
+    scf.yield %0 : tensor<1x2x2x4xf32>
+  }
+  return %output : tensor<1x2x2x4xf32>
+}
+
+//   CHECK-LABEL: func.func @dont_hoist_out_of_dependent_loops
+//         CHECK:   scf.for
+//         CHECK:     tensor.extract_slice
+// CHECK-COUNT-2:     scf.for
+// CHECK-COUNT-2:       tensor.extract_slice
+// CHECK-COUNT-2:     scf.yield
+//         CHECK:     tensor.insert_slice
+//         CHECK:   scf.yield
+
+// -----
+
+func.func @dont_hoist_insert_slices_not_disjoint(
     %input: tensor<1x9x9x3xf32>, %filter: tensor<3x3x3x16xf32>, %init: tensor<1x2x2x4xf32>,
     %offset0: index, %offset1: index, %offset2: index) -> tensor<1x2x2x4xf32> {
   %c0 = arith.constant 0 : index
@@ -196,7 +234,7 @@ func.func @dont_hoist_slices_not_disjoint(
   return %0 : tensor<1x2x2x4xf32>
 }
 
-//   CHECK-LABEL: func.func @dont_hoist_slices_not_disjoint
+//   CHECK-LABEL: func.func @dont_hoist_insert_slices_not_disjoint
 //     CHECK-NOT:   tensor.extract_slice
 // CHECK-COUNT-2:   scf.for
 // CHECK-COUNT-3:     tensor.extract_slice
