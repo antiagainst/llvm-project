@@ -20,6 +20,7 @@
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/TypeUtilities.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/STLExtras.h"
@@ -80,6 +81,58 @@ static Type getRuntimeArrayElementType(Type type) {
   return rtArrayType.getElementType();
 }
 
+/// Given a runtime array resource type, returns the counterpart resource type
+/// that has the primitive type being integer of the same bitwdith.
+///
+/// For example, for `!spirv.ptr<!spirv.struct<!spirv.rtarray<vector<4xf16>>>>`,
+/// returns `!spirv.ptr<!spirv.struct<!spirv.rtarray<vector<4xi16>>>>`,
+static Type getIntResourceType(Type type) {
+  auto srcPtrType = type.dyn_cast<spirv::PointerType>();
+  if (!srcPtrType)
+    return {};
+
+  auto srcStructType =
+      srcPtrType.getPointeeType().dyn_cast<spirv::StructType>();
+  if (!srcStructType || srcStructType.getNumElements() != 1)
+    return {};
+
+  auto srcRtArrayType =
+      srcStructType.getElementType(0).dyn_cast<spirv::RuntimeArrayType>();
+  if (!srcRtArrayType)
+    return {};
+
+  Type srcElemType = srcRtArrayType.getElementType();
+  if (!srcElemType)
+    return {};
+
+  Type dstElemType;
+  // We only need to handle floating point element types.
+  if (auto vectorType = srcElemType.dyn_cast<VectorType>()) {
+    auto scalarType = vectorType.getElementType();
+    if (scalarType.isa<FloatType>()) {
+      auto intType = IntegerType::get(type.getContext(),
+                                      scalarType.getIntOrFloatBitWidth());
+      dstElemType = VectorType::get(vectorType.getShape(), intType);
+    }
+  } else {
+    if (srcElemType.isa<FloatType>())
+      dstElemType = IntegerType::get(type.getContext(),
+                                     srcElemType.getIntOrFloatBitWidth());
+  }
+
+  if (!dstElemType)
+    return type;
+
+  auto dstRtArrayType = spirv::RuntimeArrayType::get(
+      dstElemType, srcRtArrayType.getArrayStride());
+  SmallVector<spirv::StructType::MemberDecorationInfo> decorations;
+  srcStructType.getMemberDecorations(decorations);
+  auto dstStructType = spirv::StructType::get(
+      {dstRtArrayType}, srcStructType.getMemberOffset(0), decorations);
+
+  return spirv::PointerType::get(dstStructType, srcPtrType.getStorageClass());
+}
+
 /// Given a list of resource element `types`, returns the index of the canonical
 /// resource that all resources should be unified into. Returns llvm::None if
 /// unable to unify.
@@ -92,8 +145,8 @@ static Optional<int> deduceCanonicalResource(ArrayRef<spirv::SPIRVType> types) {
   vectorNumBits.reserve(types.size());
   vectorIndices.reserve(types.size());
 
-  for (const auto &indexedTypes : llvm::enumerate(types)) {
-    spirv::SPIRVType type = indexedTypes.value();
+  for (const auto &indexedType : llvm::enumerate(types)) {
+    spirv::SPIRVType type = indexedType.value();
     assert(type.isScalarOrVector());
     if (auto vectorType = type.dyn_cast<VectorType>()) {
       if (vectorType.getNumElements() % 2 != 0)
@@ -106,7 +159,7 @@ static Optional<int> deduceCanonicalResource(ArrayRef<spirv::SPIRVType> types) {
       scalarNumBits.push_back(
           vectorType.getElementType().getIntOrFloatBitWidth());
       vectorNumBits.push_back(*numBytes * 8);
-      vectorIndices.push_back(indexedTypes.index());
+      vectorIndices.push_back(indexedType.index());
     } else {
       scalarNumBits.push_back(type.getIntOrFloatBitWidth());
     }
@@ -143,7 +196,11 @@ static Optional<int> deduceCanonicalResource(ArrayRef<spirv::SPIRVType> types) {
   return std::distance(scalarNumBits.begin(), minVal);
 }
 
-static bool areSameBitwidthScalarType(Type a, Type b) {
+static bool areSameBitwidthScalarVectorType(Type a, Type b) {
+  if (auto av = a.dyn_cast<VectorType>())
+    if (auto bv = b.dyn_cast<VectorType>())
+      return av.getNumElements() == bv.getNumElements() &&
+             av.getElementTypeBitWidth() == bv.getElementTypeBitWidth();
   return a.isIntOrFloat() && b.isIntOrFloat() &&
          a.getIntOrFloatBitWidth() == b.getIntOrFloatBitWidth();
 }
@@ -167,12 +224,17 @@ public:
 
   explicit ResourceAliasAnalysis(Operation *);
 
+  /// Creates canonical resources with integer scalar types.
+  ///
+  /// This is needed for resources with floating point scalar types. Using those
+  /// as the canonical resource types means we might have issues around floating
+  /// point NaN, infinity, or denormalized value flushing weirdness. It's better
+  /// to use integer types to preseve the exact bit pattern.
+  void createCanonicalIntResources(OpBuilder &builder);
+
   /// Returns true if the given `op` can be rewritten to use a canonical
   /// resource.
   bool shouldUnify(Operation *op) const;
-
-  /// Returns all descriptors and their corresponding aliased resources.
-  const AliasedResourceMap &getResourceMap() const { return resourceMap; }
 
   /// Returns the canonical resource for the given descriptor/variable.
   spirv::GlobalVariableOp
@@ -290,6 +352,43 @@ void ResourceAliasAnalysis::recordIfUnifiable(
   }
 }
 
+void ResourceAliasAnalysis::createCanonicalIntResources(OpBuilder &builder) {
+  for (const auto &descriptorResources : resourceMap) {
+    auto [descriptor, resources] = descriptorResources;
+    // If there is only one resource bound to this descriptor, nothing to do.
+    if (resources.size() == 1)
+      continue;
+
+    // If all resources have the same scalar type, nothing to do.
+    auto scalarTypes =
+        llvm::map_range(resources, [&](spirv::GlobalVariableOp varOp) {
+          return getElementTypeOrSelf(elementTypeMap[varOp]);
+        });
+    if (llvm::all_equal(scalarTypes))
+      continue;
+
+    spirv::GlobalVariableOp resource = getCanonicalResource(descriptor);
+    if (resource.getInitializer())
+      continue; // Initializer not supported right now.
+
+    // Try to get the resource type with integer scalar type.
+    Type srcType = resource.getType();
+    Type dstType = getIntResourceType(srcType);
+    if (!dstType || srcType == dstType)
+      continue;
+
+    std::string name = resource.getName().str() + "_int";
+    auto varOp = builder.create<spirv::GlobalVariableOp>(
+        resource.getLoc(), dstType, name, descriptor.first, descriptor.second);
+
+    // Update various internal bookkeeping maps.
+    canonicalResourceMap[descriptor] = varOp;
+    descriptorMap[varOp] = descriptor;
+    elementTypeMap[varOp] =
+        getRuntimeArrayElementType(dstType).cast<spirv::SPIRVType>();
+  }
+}
+
 //===----------------------------------------------------------------------===//
 // Patterns
 //===----------------------------------------------------------------------===//
@@ -353,7 +452,7 @@ struct ConvertAccessChain : public ConvertAliasResource<spirv::AccessChainOp> {
     spirv::SPIRVType dstElemType = analysis.getElementType(dstVarOp);
 
     if (srcElemType == dstElemType ||
-        areSameBitwidthScalarType(srcElemType, dstElemType)) {
+        areSameBitwidthScalarVectorType(srcElemType, dstElemType)) {
       // We have the same bitwidth for source and destination element types.
       // Thie indices keep the same.
       rewriter.replaceOpWithNewOp<spirv::AccessChainOp>(
@@ -433,7 +532,7 @@ struct ConvertLoad : public ConvertAliasResource<spirv::LoadOp> {
       return success();
     }
 
-    if (areSameBitwidthScalarType(srcElemType, dstElemType)) {
+    if (areSameBitwidthScalarVectorType(srcElemType, dstElemType)) {
       auto castOp = rewriter.create<spirv::BitcastOp>(loc, srcElemType,
                                                       newLoadOp.getValue());
       rewriter.replaceOp(loadOp, castOp->getResults());
@@ -510,7 +609,7 @@ struct ConvertStore : public ConvertAliasResource<spirv::StoreOp> {
         adaptor.getPtr().getType().cast<spirv::PointerType>().getPointeeType();
     if (!srcElemType.isIntOrFloat() || !dstElemType.isIntOrFloat())
       return rewriter.notifyMatchFailure(storeOp, "not scalar type");
-    if (!areSameBitwidthScalarType(srcElemType, dstElemType))
+    if (!areSameBitwidthScalarVectorType(srcElemType, dstElemType))
       return rewriter.notifyMatchFailure(storeOp, "different bitwidth");
 
     Location loc = storeOp.getLoc();
@@ -542,6 +641,9 @@ void UnifyAliasedResourcePass::runOnOperation() {
 
   // Analyze aliased resources first.
   ResourceAliasAnalysis &analysis = getAnalysis<ResourceAliasAnalysis>();
+
+  OpBuilder builder = OpBuilder::atBlockBegin(moduleOp.getBody());
+  analysis.createCanonicalIntResources(builder);
 
   ConversionTarget target(*context);
   target.addDynamicallyLegalOp<spirv::GlobalVariableOp, spirv::AddressOfOp,
