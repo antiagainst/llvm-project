@@ -576,6 +576,29 @@ struct ConvertLoad : public ConvertAliasResource<spirv::LoadOp> {
             rewriter.create<spirv::LoadOp>(loc, componentAcOp));
       }
 
+      Type dstElemIntType =
+          IntegerType::get(getContext(), srcElemType.getIntOrFloatBitWidth());
+      for (unsigned i = 0; i < components.size(); ++i) {
+        Value converted = rewriter.create<spirv::UConvertOp>(
+            loc, dstElemIntType, components[i]);
+        Value shift = rewriter.create<spirv::ConstantOp>(
+            loc, rewriter.getI32Type(),
+            rewriter.getI32IntegerAttr(dstElemType.getIntOrFloatBitWidth() *
+                                       i));
+        components[i] =
+            rewriter.create<spirv::ShiftLeftLogicalOp>(loc, converted, shift);
+      }
+
+      Value finalValue = components[0];
+      for (unsigned i = 1; i < components.size(); ++i) {
+        finalValue =
+            rewriter.create<spirv::BitwiseOrOp>(loc, finalValue, components[i]);
+      }
+      finalValue =
+          rewriter.create<spirv::BitcastOp>(loc, srcElemType, finalValue);
+      rewriter.replaceOp(loadOp, finalValue);
+
+      /*
       // Create a vector of the components and then cast back to the larger
       // bitwidth element type. For spirv.bitcast, the lower-numbered components
       // of the vector map to lower-ordered bits of the larger bitwidth element
@@ -589,6 +612,7 @@ struct ConvertLoad : public ConvertAliasResource<spirv::LoadOp> {
         vectorValue =
             rewriter.create<spirv::BitcastOp>(loc, srcElemType, vectorValue);
       rewriter.replaceOp(loadOp, vectorValue);
+      */
       return success();
     }
 
